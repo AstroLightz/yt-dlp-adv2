@@ -1,6 +1,4 @@
 from termcolor import colored
-from prompt_toolkit import prompt
-from prompt_toolkit.styles import Style
 
 # Message types
 SUCCESS: str = f"{colored('✔', "green")}"
@@ -9,11 +7,9 @@ INFO: str = f"{colored('?', "yellow")}"
 WARN: str = f"{colored('⚠️', "yellow")}"
 ACTION: str = f"{colored('➜', "blue")}"
 
-# Prompt style
-style: Style = Style.from_dict({
-    'cyan': 'ansicyan'
-})
-
+# ANSI Codes for input
+CYAN: str = "\033[36m"
+RESET: str = "\033[0m"
 
 class Menu:
     """
@@ -93,9 +89,10 @@ class Menu:
             """
             while True:
                 try:
-                    url: str = prompt([(
-                        "class:cyan", "> "
-                    )], style=style)
+                    url: str = input(f"> {CYAN}")
+
+                    # Reset ANSI codes
+                    print(RESET, end="")
 
                     if ("https://" not in url and "http://" not in url) or url == "":
                         raise ValueError

@@ -5,5 +5,7 @@ Remake of the original yt-dlp-adv, written in Python 3
 
 ## Completed Features:
 - Main menu
+- Most submenus
+- Inputs
 
 More info can be found in the [TODO](./TODO) file

@@ -1,4 +1,13 @@
-- Make rest of submenus
-- Setup downloader
-- Error checking
-- Fix any bugs
+- Downloading logic
+    1. Process the URL
+    2. Download the item(s)
+    3. Check if  the item downloaded successfully or not and keep track of both
+
+- Case scenarios
+    1. User chose wrong item count
+    2. Item(s) already exist on the user's device
+
+- Finish displaying the menus
+    - Menus are all done, just need to add them to the backend
+
+- Debugging/Testing
