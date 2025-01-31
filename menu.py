@@ -1,4 +1,6 @@
 from termcolor import colored
+from prompt_toolkit import prompt
+from prompt_toolkit.styles import Style
 
 # Message types
 SUCCESS: str = f"{colored('✔', "green")}"
@@ -7,11 +9,102 @@ INFO: str = f"{colored('?', "yellow")}"
 WARN: str = f"{colored('⚠️', "yellow")}"
 ACTION: str = f"{colored('➜', "blue")}"
 
+# Prompt style
+style: Style = Style.from_dict({
+    'cyan': 'ansicyan'
+})
+
 
 class Menu:
     """
     Contains all menus for the program
     """
+
+    class Input:
+        """
+        Contains all input prompts and input validation
+        """
+
+        @staticmethod
+        def get_input_num(num_entries: int = 3, default_option: int = 1) -> int:
+            """
+            Gets a numeric input from the user
+            :param default_option: The default option to select
+            :param num_entries: Number of entries in the menu. Must be at least 2
+            :return: The selected option
+            """
+
+            # Create options list string
+            options_list: str = "["
+
+            for i in range(num_entries):
+                if i != num_entries - 1:
+                    options_list += f"{i + 1}/"
+                else:
+                    options_list += f"{i + 1}"
+
+            options_list += "]"
+
+            while True:
+                try:
+                    choice: int = int(
+                        input(
+                            f"> {colored(options_list, "magenta")} {colored(f"({default_option})", "cyan")}: ") or default_option)
+
+                    if choice < 1 or choice > num_entries:
+                        raise ValueError
+
+                    return choice
+
+                except ValueError:
+                    print(
+                        f"{FAIL} {colored(f"Invalid input. Please enter an integer between 1 and {num_entries}.", "red")}")
+
+        @staticmethod
+        def get_input_bool(default_option: bool) -> bool:
+            """
+            Get a boolean input from the user (Y or N)
+            :param default_option: The default option to select
+            :return: The selected option as a boolean
+            """
+            while True:
+                try:
+                    choice: str = input(
+                        f"> {colored(f"[{'Y' if default_option else 'y'}/{'N' if not default_option else 'n'}]", "magenta")}: "
+                    ).lower()
+
+                    if choice not in ["y", "n"] and choice != "":
+                        raise ValueError
+                    elif choice == "":
+                        return default_option
+
+                    # Returns true if choice is "y", false if choice is "n"
+                    return choice == "y"
+
+                except ValueError:
+                    print(
+                        f"{FAIL} {colored("Invalid input. Please enter 'Y' or 'N'.", "red")}")
+
+        @staticmethod
+        def get_input_url() -> str:
+            """
+            Get the URL of the item
+            :return: The URL of the item
+            """
+            while True:
+                try:
+                    url: str = prompt([(
+                        "class:cyan", "> "
+                    )], style=style)
+
+                    if ("https://" not in url and "http://" not in url) or url == "":
+                        raise ValueError
+
+                    return url
+
+                except ValueError:
+                    print(
+                        f"{FAIL} {colored('Invalid input. Please enter a valid URL.', 'red')}")
 
     @staticmethod
     def gap(length: int = 3):
@@ -21,46 +114,16 @@ class Menu:
         """
         print("\n" * length, end="")
 
-    @staticmethod
-    def get_input(num_entries: int = 3, default_option: int = 1) -> int:
-        """
-        Gets input from the user
-        :param default_option: The default option to select
-        :param num_entries: Number of entries in the menu. Must be at least 2
-        :return: The selected option
-        """
-
-        # Create options list string
-        options_list: str = "["
-
-        for i in range(num_entries):
-            if i != num_entries - 1:
-                options_list += f"{i + 1}/"
-            else:
-                options_list += f"{i + 1}"
-
-        options_list += "]"
-
-        while True:
-            try:
-                choice: int = int(
-                    input(f"> {colored(options_list, "magenta")} {colored(f"({default_option})", "cyan")}: ") or default_option)
-
-                if choice < 1 or choice > num_entries:
-                    raise ValueError
-
-                return choice
-
-            except ValueError:
-                print(f"{FAIL} {colored(f"Invalid input. Please enter an integer between 1 and {num_entries}.", "red")}")
-
     class Main:
         """
         Contains all menus that are not specific to any particular download type
         """
 
         @staticmethod
-        def program_header():
+        def program_header() -> None:
+            """
+            Header to be displayed when the script is launched
+            """
             print(f"\nWelcome to {colored("YouTube Downloader: Advanced 2.0!", "red")}!")
             print(
                 f"{colored("A remake of the original yt-dlp-adv, written in Python. Now with new features!", 'green')}\n")
@@ -83,7 +146,7 @@ class Menu:
             print(f"{colored('●', "yellow")} Script made by {colored("AstroLightz", "cyan")}. I hope you enjoy!\n\n")
 
         @staticmethod
-        def main_menu():
+        def main_menu() -> None:
             """
             Displays list of download types
             """
@@ -92,13 +155,103 @@ class Menu:
             print(f"  {colored('2', "cyan")}) Audio")
             print(f"  {colored('3', "cyan")}) Thumbnails")
 
+        @staticmethod
+        def item_count() -> None:
+            """
+            Get if item is a playlist or single item
+            """
+            print(f"\n{INFO} Is it a playlist or a single item?")
+            print(f"  {colored('1', "cyan")}) Playlist")
+            print(f"  {colored('2', "cyan")}) Single Item")
+
+        @staticmethod
+        def filename_format() -> None:
+            """
+            Get the format for the filename (uploader and title or just title)
+            """
+            print(f"\n{INFO} What format do you want the filenames to be?")
+            print(f"  {colored('1', "cyan")}) (uploader) - (title).(ext)")
+            print(f"  {colored('2', "cyan")}) (title).(ext)")
+
+        @staticmethod
+        def get_url() -> None:
+            """
+            Get the URL of the item
+            """
+            print(f"\n{INFO} Enter the YouTube URL:")
+
+        @staticmethod
+        def starting_download(count: int) -> None:
+            """
+            Message to display when the download starts
+            :param count: Number of items to download
+            """
+            print(f"\n{ACTION} Starting to download {colored(count, "yellow")} item(s). "
+                  f"Please be patient as this might take a while...\n")
+
+        @staticmethod
+        def downloading(cur_item: int, total_items: int, title: str) -> None:
+            """
+            Download status message
+            :param cur_item: Current item out of the total number of items to download
+            :param total_items: Total number of items to download
+            :param title: Title of the item being downloaded
+            """
+            print(f"{colored(f"({cur_item}/{total_items})", "yellow")} Downloading: {colored(title, "cyan")} ... ",
+                  end="")
+
+        @staticmethod
+        def download_complete() -> None:
+            """
+            Appending string to be used at the end of `Menu.Main.downloading` if the download is successful
+            """
+            print(f"{colored("Completed", "green")}")
+
+        @staticmethod
+        def download_failed() -> None:
+            """
+            Appending string to be used at the end of `Menu.Main.downloading` if the download fails
+            """
+            print(f"{colored("Failed", "red")}")
+
+        @staticmethod
+        def all_downloads_complete(completed: int, total: int, path: str, size: int) -> None:
+            """
+            Message to display when all downloads are complete
+            :param completed: Number of completed downloads
+            :param total: Total number of downloads
+            :param path: Path to the directory where the downloads are saved
+            :param size: Total size of the download in megabytes
+            """
+            print(f"\n\n\n{colored('●', "red")}{colored('●', "magenta")}{colored('●', "yellow")}"
+                  f" {colored("Download Summary", "green", attrs=["bold", "underline"])} "
+                  f"{colored('●', "yellow")}{colored('●', "magenta")}{colored('●', "red")}")
+            print(f"{SUCCESS} {colored(completed, "yellow")} out of {colored(total, "yellow")} item(s) downloaded "
+                  f"successfully to {colored(path, "cyan")}. ")
+            print(f"Used {colored(f"{size:.2f} MB", "yellow")} of storage.")
+
+        @staticmethod
+        def failed_downloads_list(failed: int, items: list[str]) -> None:
+            """
+            Displays all failed downloads in a list. Comes after `Menu.Main.all_downloads_complete`
+            :param failed: Number of failed downloads
+            :param items: List of failed downloads' titles
+            """
+            print(f"{FAIL} {colored(failed, "red")} item(s) failed to download:")
+
+            for title in items:
+                print(f"  - {colored(f"\'{title}\'", "cyan")}")
+
     class Video:
         """
         Contains all menus for video downloads
         """
-        
+
         @staticmethod
-        def video_menu():
+        def video_menu() -> None:
+            """
+            Displays list of video file formats
+            """
             print(f"\n{INFO} What file format do you want to use?")
             print(f"  {colored('1', "cyan")}) MP4")
             print(f"  {colored('2', "cyan")}) MKV")
@@ -110,7 +263,10 @@ class Menu:
         """
 
         @staticmethod
-        def audio_menu():
+        def audio_menu() -> None:
+            """
+            Displays list of audio file formats
+            """
             print(f"\n{INFO} What file format do you want to use?")
             print(f"  {colored('1', "cyan")}) MP3")
             print(f"  {colored('2', "cyan")}) OGG")
@@ -123,7 +279,121 @@ class Menu:
         """
 
         @staticmethod
-        def artwork_menu():
+        def artwork_menu() -> None:
+            """
+            Displays list of image file formats
+            """
             print(f"\n{INFO} What file format do you want to use?")
             print(f"  {colored('1', "cyan")}) PNG")
             print(f"  {colored('2', "cyan")}) JPG")
+
+    class Problem:
+        """
+        Any problems the script may encounter, such as duplicate files, bad URLs, or errors
+        """
+
+        class Success:
+            """
+            Messages to display when a problem is resolved
+            """
+
+            @staticmethod
+            def duplicate_playlist(path: str) -> None:
+                """
+                Message to display when a playlist already exists on the user's device and user does not want to re-download
+                :param path: Direct path to the playlist on the disk
+                """
+                print(f"\n{SUCCESS} Playlist is already downloaded to {colored(path, "cyan")}.")
+
+            @staticmethod
+            def duplicate_single_item(path: str) -> None:
+                """
+                Message to display when a single item already exists on the user's device and user does not want to re-download
+                :param path: Direct path to the item on the disk
+                """
+                print(f"\n{SUCCESS} Item is already downloaded to {colored(path, "cyan")}.")
+
+        class Warning:
+            """
+            Any problems that don't immediately cause an error, but require attention
+            """
+
+            @staticmethod
+            def url_is_playlist() -> None:
+                """
+                Warning to display when the URL is a playlist, but "Single Item" was selected
+                """
+                print(f"\n{WARN} The URL contains more than one item, when {colored("Single Item", "red")} mode "
+                      f"was chosen. Do you want to switch to {colored("Playlist", "green")} mode?")
+
+            @staticmethod
+            def url_is_single_item() -> None:
+                """
+                Warning to display when the URL is a single item, but "Playlist" was selected
+                """
+                print(f"\n{WARN} The URL contains only one item, when {colored("Playlist", "red")} mode "
+                      f"was chosen. Do you want to switch to {colored("Single Item", "green")} mode?")
+
+            @staticmethod
+            def duplicate_playlist(title: str) -> None:
+                """
+                Warning when a playlist already exists on the user's device
+                """
+                print(f"\n${WARN} The playlist {colored(title, "cyan")} already exists. "
+                      f"Do you want to re-download it?")
+
+            @staticmethod
+            def duplicate_single_item(title: str) -> None:
+                """
+                Warning when a single item already exists on the user's device
+                """
+                print(f"\n${WARN} The item {colored(title, 'cyan')} already exists. "
+                      f"Do you want to re-download it?")
+
+        class Error:
+            """
+            Any errors the script may encounter
+            """
+
+            @staticmethod
+            def invalid_url() -> None:
+                print(f"{FAIL} The entered URL is not valid. Please make sure the URL starts with "
+                      f"{colored("\'https\'", "cyan")} or {colored("\'http\'", "cyan")}.")
+
+            @staticmethod
+            def incorrect_mode_single() -> None:
+                """
+                Error when user chooses the Playlist instead of Single Item, and does not want to switch
+                """
+                print(
+                    f"\n{FAIL} Cannot download items due to incorrect mode selected. Please choose the right mode for the provided URL.")
+                print(f"- Chosen Mode: {colored("Playlist", "red")}$")
+                print(f"- Correct Mode: {colored("Single Item", "green")}")
+
+            @staticmethod
+            def incorrect_mode_playlist() -> None:
+                """
+                Error when user chooses the Single Item instead of Playlist, and does not want to switch
+                """
+                print(
+                    f"\n{FAIL} Cannot download items due to incorrect mode selected. Please choose the right mode for the provided URL.")
+                print(f"- Chosen Mode: {colored("Single Item", "red")}")
+                print(f"- Correct Mode: {colored("Playlist", "green")}")
+
+        # Unspecified problems
+
+        @staticmethod
+        def mode_change_single() -> None:
+            """
+            Message to display when user chooses to switch from Playlist to Single Item
+            """
+            print(f"\n{SUCCESS} Mode changed successfully from {colored("Playlist", "red")} "
+                  f"to {colored("Single Item", "green")}. Continuing with download...")
+
+        @staticmethod
+        def mode_change_playlist() -> None:
+            """
+            Message to display when user chooses to switch from Single Item to Playlist
+            """
+            print(f"\n{SUCCESS} Mode changed successfully from {colored("Single Item", "red")} "
+                  f"to {colored("Playlist", "green")}. Continuing with download...")
