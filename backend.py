@@ -17,6 +17,12 @@ class Backend:
         self.switch_mode = None
         self.duplicate = None
 
+        self.titles: list[str] = []
+        self.uploaders: list[str] = []
+        self.urls: list[str] = []
+
+        self.ytdlp_options: dict = {}
+
         Menu.Main.program_header()
         Menu.Main.main_menu()
         Menu.gap(1)
@@ -42,6 +48,9 @@ class Backend:
 
         # URL
         self.menu_get_url()
+
+        # Download items
+        self.download()
 
     # ============================================================================
     #                           Menu Navigation
@@ -89,3 +98,31 @@ class Backend:
         Menu.Main.get_url()
 
         self.yt_url: str = Menu.Input.get_input_url()
+
+    ### Download ###
+
+    def download(self):
+        """
+        Set up and download items
+        :return:
+        """
+
+        # Extract info from URL
+        self.titles, self.uploaders, self.urls = Downloader.extract_info(self.item_count, self.yt_url)
+
+        # If just a single item, add the yt url to the list
+        if self.item_count == 1:
+            self.urls.append(self.yt_url)
+
+        # Set up yt-dlp options
+        self.ytdlp_options = Downloader.setup_ytdlp_options(self.dwn_type, self.file_format, self.item_count,
+                                                            self.filename_format, self.yt_url)
+
+        # TEST: Just download a single item
+        if self.item_count == 1:
+            Menu.Main.starting_download(count = 1)
+            Menu.Main.downloading(cur_item = 1, total_items = 1, title = self.titles[0])
+            Downloader.download(self.yt_url, self.ytdlp_options)
+            Menu.Main.download_complete()
+
+

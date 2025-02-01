@@ -1,6 +1,7 @@
 - Downloading logic
-    1. Process the URL
     2. Download the item(s)
+        - Currently, can download a single item. Not tested with playlist yet.
+
     3. Check if  the item downloaded successfully or not and keep track of both
 
 - Case scenarios
@@ -8,6 +9,9 @@
     2. Item(s) already exist on the user's device
 
 - Finish displaying the menus
-    - Menus are all done, just need to add them to the backend
+    - Downloading Menus need more work
+    - "All Downloads Complete" menu
+    - List of failed downloads
+    - "Problem" menus, such as duplicate files, wrong mode chosen, etc.
 
 - Debugging/Testing

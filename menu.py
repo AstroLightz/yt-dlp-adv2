@@ -158,8 +158,8 @@ class Menu:
             Get if item is a playlist or single item
             """
             print(f"\n{INFO} Is it a playlist or a single item?")
-            print(f"  {colored('1', "cyan")}) Playlist")
-            print(f"  {colored('2', "cyan")}) Single Item")
+            print(f"  {colored('1', "cyan")}) Single Item")
+            print(f"  {colored('2', "cyan")}) Playlist")
 
         @staticmethod
         def filename_format() -> None:
