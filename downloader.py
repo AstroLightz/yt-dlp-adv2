@@ -1,7 +1,5 @@
 import yt_dlp as yt
-
-# Globals
-SCRIPT_DIR_NAME: str = "YouTube Downloads"
+from threading import Thread
 
 
 class Downloader:
@@ -12,10 +10,14 @@ class Downloader:
 
     # Silence yt-dlp output
     class QuietLogger:
+
+        # Silence debug output
         def debug(self, msg): pass
 
+        # Silence warnings
         def warning(self, msg): pass
 
+        # Silence errors
         def error(self, msg): pass
 
     @staticmethod
@@ -23,10 +25,10 @@ class Downloader:
         titles: list[str] = []
 
         ydl_args = {
-            'logger': Downloader.QuietLogger(),
-            'extract_flat': True,
-            'force_generic_extractor': False,
-            'quiet': True,
+            "logger": Downloader.QuietLogger(),
+            "extract_flat": True,
+            "force_generic_extractor": False,
+            "quiet": True,
         }
 
         # Extract all the titles from the URL
@@ -35,10 +37,10 @@ class Downloader:
                 result = ydl.extract_info(url, download=False)
 
                 # Handle playlists
-                if 'entries' in result:
-                    titles = [entry.get('title', '') for entry in result['entries']]
+                if "entries" in result:
+                    titles = [entry.get("title", "") for entry in result["entries"]]
                 else:
-                    titles = [result.get('title', '')]
+                    titles = [result.get("title", "")]
 
             except Exception as e:
                 print(f"Error: {e}")
@@ -49,34 +51,40 @@ class Downloader:
     def get_playlist_name(url: str) -> str:
 
         ydl_args = {
-            'logger': Downloader.QuietLogger(),
-            'extract_flat': True,
-            'force_generic_extractor': False,
-            'quiet': True,
+            "logger": Downloader.QuietLogger(),
+            "extract_flat": True,
+            "force_generic_extractor": False,
+            "quiet": True,
         }
 
         with yt.YoutubeDL(ydl_args) as ydl:
             try:
                 playlist = ydl.extract_info(url, download=False)
-                return playlist['title']
+                return str(playlist["title"])
 
             except Exception as e:
                 print(f"Error: {e}")
+                return ""
 
     @staticmethod
     def setup_ytdlp_options(dwn_type: int, file_format: int, item_count: int,
-                            filename_format: int, yt_url: str) -> dict:
+                            dwn_dir: str, filename_format: int, playlist_name: str) -> dict:
         """
         Sets up the yt-dlp options
         :param dwn_type: Download type: 1 = Video, 2 = Audio, 3 = Artwork
         :param file_format: File format: Depends on download type
         :param item_count: Number of items: 1 = Single item, 2 = Playlist
+        :param dwn_dir: Download directory
         :param filename_format: Filename format: 1 = (uploader) - (title).(ext), 2 = (title).(ext)
-        :param yt_url: YouTube URL
+        :param playlist_name: Playlist name
         :return: dictionary containing all yt-dlp options
         """
 
-        ytdlp_options: dict = {}
+        # Setup yt-dlp options
+        ytdlp_options: dict = {
+            "logger": Downloader.QuietLogger(),
+            "quiet": True
+        }
 
         # -------------------------------------------------------------------------------
         #                               Setup Format
@@ -87,70 +95,53 @@ class Downloader:
 
             # Video
             if file_format == 1:
-                ytdlp_options: dict = {
-                    "format": "bestvideo+bestaudio",
-                    "merge_output_format": "mp4"
-                }
+                ytdlp_options["format"] = "bestvideo+bestaudio"
+                ytdlp_options["merge_output_format"] = "mp4"
 
             elif file_format == 2:
-                ytdlp_options: dict = {
-                    "format": "bestvideo+bestaudio",
-                    "merge_output_format": "mkv"
-                }
+                ytdlp_options["format"] = "bestvideo+bestaudio"
+                ytdlp_options["merge_output_format"] = "mkv"
 
             elif file_format == 3:
-                ytdlp_options: dict = {
-                    "format": "bestvideo+bestaudio",
-                    "merge_output_format": "webm"
-                }
+                ytdlp_options["format"] = "bestvideo+bestaudio"
+                ytdlp_options["merge_output_format"] = "webm"
 
         elif dwn_type == 2:
 
             # Audio
             if file_format == 1:
-                ytdlp_options: dict = {
-                    "format": "bestaudio/best",
-                    "extractaudio": True,
-                    "audioformat": "mp3"
-                }
+                ytdlp_options["postprocessors"] = [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "0",
+                }]
 
             elif file_format == 2:
-                ytdlp_options: dict = {
-                    "format": "bestaudio/best",
-                    "extractaudio": True,
-                    "audioformat": "vorbis"
-                }
+                ytdlp_options["postprocessors"] = [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "vorbis",
+                    "preferredquality": "0",
+                }]
 
             elif file_format == 3:
-                ytdlp_options: dict = {
-                    "format": "bestaudio/best",
-                    "extractaudio": True,
-                    "audioformat": "wav"
-                }
+                ytdlp_options["postprocessors"] = [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "wav",
+                    "preferredquality": "0",
+                }]
 
             elif file_format == 4:
-                ytdlp_options: dict = {
-                    "format": "bestaudio/best",
-                    "extractaudio": True,
-                    "audioformat": "flac"
-                }
+                ytdlp_options["postprocessors"] = [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "flac",
+                    "preferredquality": "0",
+                }]
 
         elif dwn_type == 3:
 
             # Artwork
-            if file_format == 1:
-                ytdlp_options: dict = {
-                    "skip_download": True,
-                    "writethumbnail": True,
-                    "convert_thumbnails": "png"
-                }
-
-            elif file_format == 2:
-                ytdlp_options: dict = {
-                    "skip_download": True,
-                    "writethumbnail": True,
-                    "convert_thumbnails": "jpg"
-                }
+            ytdlp_options["skip_download"] = True
+            ytdlp_options["writethumbnail"] = True
 
         # -------------------------------------------------------------------------------
         #                               Setup Path
@@ -159,211 +150,24 @@ class Downloader:
         # Single item
         if item_count == 1:
 
-            # Video
-            if dwn_type == 1:
+            # (uploader) - (title).(ext)
+            if filename_format == 1 and dwn_type != 3:
+                ytdlp_options["outtmpl"] = f"{dwn_dir}%(uploader)s - %(title)s.%(ext)s"
 
-                # MP4
-                if file_format == 1:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/MP4/Singles/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options["outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/MP4/Singles/%(title)s.%(ext)s"
-
-                # MKV
-                elif file_format == 2:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/MKV/Singles/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options["outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/MKV/Singles/%(title)s.%(ext)s"
-
-                # WEBM
-                elif file_format == 3:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/WEBM/Singles/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options["outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/WEBM/Singles/%(title)s.%(ext)s"
-
-            # Audio
-            elif dwn_type == 2:
-
-                # MP3
-                if file_format == 1:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/MP3/Singles/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options["outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/MP3/Singles/%(title)s.%(ext)s"
-
-                # Vorbis
-                elif file_format == 2:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/Vorbis/Singles/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options["outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/Vorbis/Singles/%(title)s.%(ext)s"
-
-                # WAV
-                elif file_format == 3:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/WAV/Singles/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options["outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/WAV/Singles/%(title)s.%(ext)s"
-
-                # FLAC
-                elif file_format == 4:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/FLAC/Singles/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options["outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/FLAC/Singles/%(title)s.%(ext)s"
-
-            # Artwork
-            elif dwn_type == 3:
-
-                # PNG
-                if file_format == 1:
-                    ytdlp_options["outtmpl"] = f"~/Pictures/{SCRIPT_DIR_NAME}/PNG/Singles/%(title)s.%(ext)s"
-
-                # JPG
-                elif file_format == 2:
-                    ytdlp_options["outtmpl"] = f"~/Pictures/{SCRIPT_DIR_NAME}/JPG/Singles/%(title)s.%(ext)s"
+            # (title).(ext)
+            elif filename_format == 2:
+                ytdlp_options["outtmpl"] = f"{dwn_dir}%(title)s.%(ext)s"
 
         # Playlist
         elif item_count == 2:
 
-            # Get playlist name
-            playlist_name: str = Downloader.get_playlist_name(yt_url)
+            # (uploader) - (title).(ext)
+            if filename_format == 1 and dwn_type != 3:
+                ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(uploader)s - %(title)s.%(ext)s"
 
-            # Video
-            if dwn_type == 1:
-
-                # MP4
-                if file_format == 1:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/MP4/Playlists/{playlist_name}/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/MP4/Playlists/{playlist_name}/%(title)s.%(ext)s"
-
-                # MKV
-                elif file_format == 2:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/MKV/Playlists/{playlist_name}/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/MKV/Playlists/{playlist_name}/%(title)s.%(ext)s"
-
-                # WEBM
-                elif file_format == 3:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/WEBM/Playlists/{playlist_name}/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Videos/{SCRIPT_DIR_NAME}/WEBM/Playlists/{playlist_name}/%(title)s.%(ext)s"
-
-            # Audio
-            elif dwn_type == 2:
-
-                # MP3
-                if file_format == 1:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/MP3/Playlists/{playlist_name}/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/MP3/Playlists/{playlist_name}/%(title)s.%(ext)s"
-
-                # Vorbis
-                elif file_format == 2:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/Vorbis/Playlists/{playlist_name}/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/Vorbis/Playlists/{playlist_name}/%(title)s.%(ext)s"
-
-                # FLAC
-                elif file_format == 3:
-
-                    # (uploader) - (title).(ext)
-                    if filename_format == 1:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/FLAC/Playlists/{playlist_name}/%(uploader)s - %(title)s.%(ext)s"
-
-                    # (title).(ext)
-                    elif filename_format == 2:
-                        ytdlp_options[
-                            "outtmpl"] = f"~/Music/{SCRIPT_DIR_NAME}/FLAC/Playlists/{playlist_name}/%(title)s.%(ext)s"
-
-            # Artwork
-            elif dwn_type == 3:
-
-                # Uses title.ext for artwork
-
-                # PNG
-                if file_format == 1:
-                    ytdlp_options[
-                        "outtmpl"] = f"~/Pictures/{SCRIPT_DIR_NAME}/PNG/Playlists/{playlist_name}/%(title)s.%(ext)s"
-
-                # JPG
-                elif file_format == 2:
-                    ytdlp_options[
-                        "outtmpl"] = f"~/Pictures/{SCRIPT_DIR_NAME}/JPG/Playlists/{playlist_name}/%(title)s.%(ext)s"
+            # (title).(ext)
+            elif filename_format == 2:
+                ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(title)s.%(ext)s"
 
         return ytdlp_options
 
@@ -382,10 +186,10 @@ class Downloader:
 
         # Setup yt-dlp args
         ydl_args = {
-            'logger': Downloader.QuietLogger(),
-            'extract_flat': True,
-            'force_generic_extractor': False,
-            'quiet': True,
+            "logger": Downloader.QuietLogger(),
+            "extract_flat": True,
+            "force_generic_extractor": False,
+            "quiet": True,
         }
 
         with yt.YoutubeDL(ydl_args) as ydl:
@@ -393,19 +197,19 @@ class Downloader:
                 result = ydl.extract_info(yt_url, download=False)
 
                 # Handle playlists
-                if 'entries' in result:
-                    entries = result['entries']
+                if "entries" in result:
+                    entries = result["entries"]
                 else:
                     entries = [result]
 
                 # Loop through the entries and extract info
                 for entry in entries:
-                    titles.append(entry.get('title', 'Unknown'))
-                    uploaders.append(entry.get('uploader', 'Unknown'))
+                    titles.append(entry.get("title", "Unknown"))
+                    uploaders.append(entry.get("uploader", "Unknown"))
 
                     # Only collect urls if it's a playlist
                     if item_count == 2:
-                        urls.append(entry.get('webpage_url', 'Unknown'))
+                        urls.append(entry.get("url", "Unknown"))
 
             except Exception as e:
                 print(f"Error: {e}")
@@ -413,12 +217,25 @@ class Downloader:
         return titles, uploaders, urls
 
     @staticmethod
-    def download(url: str, ytdlp_options: dict) -> None:
+    def download(url: str, ytdlp_options: dict) -> bool:
         """
         Download an item
         :param url: YouTube URL
         :param ytdlp_options: Dictionary of yt-dlp options
         """
 
-        with yt.YoutubeDL(ytdlp_options) as ydl:
-            ydl.download([url])
+        def download_thread():
+            with yt.YoutubeDL(ytdlp_options) as ydl:
+                ydl.download([url])
+
+        try:
+            thread: Thread = Thread(target=download_thread)
+            thread.start()
+
+            # Wait for the download to finish
+            thread.join()
+
+            return True
+
+        except (yt.DownloadError, yt.DownloadCancelled) as _:
+            return False

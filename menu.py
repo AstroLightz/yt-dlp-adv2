@@ -11,6 +11,7 @@ ACTION: str = f"{colored('➜', "blue")}"
 CYAN: str = "\033[36m"
 RESET: str = "\033[0m"
 
+
 class Menu:
     """
     Contains all menus for the program
@@ -177,6 +178,19 @@ class Menu:
             """
             print(f"\n{INFO} Enter the YouTube URL:")
 
+    class Download:
+        """
+        Contains all menus/messages related to downloads
+        """
+
+        @staticmethod
+        def processing_url():
+            """
+            Message to display while processing the URL
+            """
+
+            print(f"\n{ACTION} Processing URL. Please wait...")
+
         @staticmethod
         def starting_download(count: int) -> None:
             """
@@ -187,7 +201,7 @@ class Menu:
                   f"Please be patient as this might take a while...\n")
 
         @staticmethod
-        def downloading(cur_item: int, total_items: int, title: str) -> None:
+        def download_status(cur_item: int, total_items: int, title: str) -> None:
             """
             Download status message
             :param cur_item: Current item out of the total number of items to download

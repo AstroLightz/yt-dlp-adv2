@@ -1,9 +1,3 @@
-- Downloading logic
-    2. Download the item(s)
-        - Currently, can download a single item. Not tested with playlist yet.
-
-    3. Check if  the item downloaded successfully or not and keep track of both
-
 - Case scenarios
     1. User chose wrong item count
     2. Item(s) already exist on the user's device
