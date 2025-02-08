@@ -17,6 +17,18 @@ class Menu:
     Contains all menus for the program
     """
 
+    class Misc:
+        """
+        Miscellaneous menus/messages that don't fit anywhere else
+        """
+
+        @staticmethod
+        def exit_script():
+            """
+            Message when exiting the script, such as using CTRL+C
+            """
+            print(f"\n{ACTION} Exiting script...")
+
     class Input:
         """
         Contains all input prompts and input validation
@@ -55,7 +67,7 @@ class Menu:
 
                 except ValueError:
                     print(
-                        f"{FAIL} {colored(f"Invalid input. Please enter an integer between 1 and {num_entries}.", "red")}")
+                        f"\n{FAIL} {colored(f"Invalid input. Please enter an integer between 1 and {num_entries}.", "red")}")
 
         @staticmethod
         def get_input_bool(default_option: bool) -> bool:
@@ -80,7 +92,7 @@ class Menu:
 
                 except ValueError:
                     print(
-                        f"{FAIL} {colored("Invalid input. Please enter 'Y' or 'N'.", "red")}")
+                        f"\n{FAIL} {colored("Invalid input. Please enter 'Y' or 'N'.", "red")}")
 
         @staticmethod
         def get_input_url() -> str:
@@ -102,7 +114,7 @@ class Menu:
 
                 except ValueError:
                     print(
-                        f"{FAIL} {colored('Invalid input. Please enter a valid URL.', 'red')}")
+                        f"\n{FAIL} {colored('Invalid input. Please enter a valid URL.', 'red')}")
 
     @staticmethod
     def gap(length: int = 3):
@@ -122,25 +134,22 @@ class Menu:
             """
             Header to be displayed when the script is launched
             """
-            print(f"\nWelcome to {colored("YouTube Downloader: Advanced 2.0!", "red")}!")
-            print(
-                f"{colored("A remake of the original yt-dlp-adv, written in Python. Now with new features!", 'green')}\n")
+            print(f"\nWelcome to {colored("YouTube Downloader: Advanced 2.0!", "red")}!\n")
 
             print(
-                f"{colored('●', "red")} This is a ZSH script that simplifies the use of the "
+                f"{colored('●', "red")} This is a Python program that simplifies the use of the "
                 f"{colored("yt-dlp", "red")} tool ({colored("https://github.com/yt-dlp/yt-dlp", "cyan")}).")
             print(
-                f"{colored('●', "red")} It provides a user-friendly, menu-driven interface to help you "
-                f"download videos, audio, and thumbnails from YouTube and other platforms.")
+                f"{colored('●', "red")} It provides a menu-driven interface to help you "
+                f"download videos, audio, and thumbnails from YouTube.")
             print(
-                f"{colored('●', "red")} You can easily customize download options and formats without "
-                f"needing to remember complex command-line arguments.")
-            print(f"{colored('●', "red")} The script supports downloading entire playlists or single items.")
+                f"{colored('●', "red")} You can customize download options and formats without "
+                f"needing to remember complex yt-dlp arguments.")
+            print(f"{colored('●', "red")} The program supports downloading entire playlists or single items.")
             print(f"{colored('●', "red")} It also offers detailed feedback on the download status and file sizes.\n")
             print(
-                f"{colored('●', "magenta")} I designed this script to be straightforward and user-friendly "
-                f"for people who, like me, don't have a lot of time to look up-")
-            print(f"{colored('●', "magenta")} complex commands and just need a quick way to download content.\n")
+                f"{colored('●', "magenta")} This is a remake of the original {colored('yt-dlp-adv', 'cyan')}, "
+                f"now with new features and quality-of-life improvements.")
             print(f"{colored('●', "yellow")} Script made by {colored("AstroLightz", "cyan")}. I hope you enjoy!\n\n")
 
         @staticmethod
@@ -197,7 +206,7 @@ class Menu:
             Message to display when the download starts
             :param count: Number of items to download
             """
-            print(f"\n{ACTION} Starting to download {colored(count, "yellow")} item(s). "
+            print(f"\n{ACTION} Starting to download {colored(count, "yellow")} {"items" if count > 1 else "item"}. "
                   f"Please be patient as this might take a while...\n")
 
         @staticmethod
@@ -208,8 +217,9 @@ class Menu:
             :param total_items: Total number of items to download
             :param title: Title of the item being downloaded
             """
-            print(f"{colored(f"({cur_item}/{total_items})", "yellow")} Downloading: {colored(title, "cyan")} ... ",
-                  end="")
+            print(
+                f"{colored(f"({cur_item}/{total_items})", "yellow")} Downloading: {colored(f"\'{title}\'", "cyan")} ... ",
+                end="")
 
         @staticmethod
         def download_complete() -> None:
@@ -226,20 +236,20 @@ class Menu:
             print(f"{colored("Failed", "red")}")
 
         @staticmethod
-        def all_downloads_complete(completed: int, total: int, path: str, size: int) -> None:
+        def all_downloads_complete(completed: int, total: int, path_dir: str, size: str) -> None:
             """
             Message to display when all downloads are complete
             :param completed: Number of completed downloads
             :param total: Total number of downloads
-            :param path: Path to the directory where the downloads are saved
-            :param size: Total size of the download in megabytes
+            :param path_dir: Path to the directory where the downloads are saved
+            :param size: Size string containing size of download and unit (bytes)
             """
             print(f"\n\n\n{colored('●', "red")}{colored('●', "magenta")}{colored('●', "yellow")}"
                   f" {colored("Download Summary", "green", attrs=["bold", "underline"])} "
                   f"{colored('●', "yellow")}{colored('●', "magenta")}{colored('●', "red")}")
             print(f"{SUCCESS} {colored(completed, "yellow")} out of {colored(total, "yellow")} item(s) downloaded "
-                  f"successfully to {colored(path, "cyan")}. ")
-            print(f"Used {colored(f"{size:.2f} MB", "yellow")} of storage.")
+                  f"successfully to {colored(f"\'{path_dir}\'", "cyan")}. ")
+            print(f"Used {colored(size, "yellow")} of storage.")
 
         @staticmethod
         def failed_downloads_list(failed: int, items: list[str]) -> None:
@@ -252,6 +262,14 @@ class Menu:
 
             for title in items:
                 print(f"  - {colored(f"\'{title}\'", "cyan")}")
+
+        @staticmethod
+        def redownloading_item(item: str) -> None:
+            """
+            Message to display when the user wants to re-download an item
+            :param item: Name of the item
+            """
+            print(f"{ACTION} Deleting {colored(f"\'{item}\'", "cyan")} and re-downloading...")
 
     class Video:
         """
@@ -324,6 +342,22 @@ class Menu:
                 """
                 print(f"\n{SUCCESS} Item is already downloaded to {colored(path, "cyan")}.")
 
+            @staticmethod
+            def mode_change_single() -> None:
+                """
+                Message to display when user chooses to switch from Playlist to Single Item
+                """
+                print(f"\n{SUCCESS} Mode changed successfully from {colored("Playlist", "red")} "
+                      f"to {colored("Single Item", "green")}. Continuing with download...")
+
+            @staticmethod
+            def mode_change_playlist() -> None:
+                """
+                Message to display when user chooses to switch from Single Item to Playlist
+                """
+                print(f"\n{SUCCESS} Mode changed successfully from {colored("Single Item", "red")} "
+                      f"to {colored("Playlist", "green")}. Continuing with download...")
+
         class Warning:
             """
             Any problems that don't immediately cause an error, but require attention
@@ -335,7 +369,8 @@ class Menu:
                 Warning to display when the URL is a playlist, but "Single Item" was selected
                 """
                 print(f"\n{WARN} The URL contains more than one item, when {colored("Single Item", "red")} mode "
-                      f"was chosen. Do you want to switch to {colored("Playlist", "green")} mode?")
+                      f"was chosen.")
+                print(f"\n{INFO} Do you want to switch to {colored("Playlist", "green")} mode?")
 
             @staticmethod
             def url_is_single_item() -> None:
@@ -343,14 +378,14 @@ class Menu:
                 Warning to display when the URL is a single item, but "Playlist" was selected
                 """
                 print(f"\n{WARN} The URL contains only one item, when {colored("Playlist", "red")} mode "
-                      f"was chosen. Do you want to switch to {colored("Single Item", "green")} mode?")
+                      f"was chosen.\nDo you want to switch to {colored("Single Item", "green")} mode?")
 
             @staticmethod
             def duplicate_playlist(title: str) -> None:
                 """
                 Warning when a playlist already exists on the user's device
                 """
-                print(f"\n${WARN} The playlist {colored(title, "cyan")} already exists. "
+                print(f"\n{WARN} The playlist {colored(f"\'{title}\'", "cyan")} already exists. "
                       f"Do you want to re-download it?")
 
             @staticmethod
@@ -358,7 +393,7 @@ class Menu:
                 """
                 Warning when a single item already exists on the user's device
                 """
-                print(f"\n${WARN} The item {colored(title, 'cyan')} already exists. "
+                print(f"\n{WARN} The item {colored(f"\'{title}\'", 'cyan')} already exists. "
                       f"Do you want to re-download it?")
 
         class Error:
@@ -378,7 +413,7 @@ class Menu:
                 """
                 print(
                     f"\n{FAIL} Cannot download items due to incorrect mode selected. Please choose the right mode for the provided URL.")
-                print(f"- Chosen Mode: {colored("Playlist", "red")}$")
+                print(f"- Chosen Mode: {colored("Playlist", "red")}")
                 print(f"- Correct Mode: {colored("Single Item", "green")}")
 
             @staticmethod
@@ -390,21 +425,3 @@ class Menu:
                     f"\n{FAIL} Cannot download items due to incorrect mode selected. Please choose the right mode for the provided URL.")
                 print(f"- Chosen Mode: {colored("Single Item", "red")}")
                 print(f"- Correct Mode: {colored("Playlist", "green")}")
-
-        # Unspecified problems
-
-        @staticmethod
-        def mode_change_single() -> None:
-            """
-            Message to display when user chooses to switch from Playlist to Single Item
-            """
-            print(f"\n{SUCCESS} Mode changed successfully from {colored("Playlist", "red")} "
-                  f"to {colored("Single Item", "green")}. Continuing with download...")
-
-        @staticmethod
-        def mode_change_playlist() -> None:
-            """
-            Message to display when user chooses to switch from Single Item to Playlist
-            """
-            print(f"\n{SUCCESS} Mode changed successfully from {colored("Single Item", "red")} "
-                  f"to {colored("Playlist", "green")}. Continuing with download...")

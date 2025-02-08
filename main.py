@@ -9,6 +9,13 @@ main.py is the main entry point for the program
 """
 
 from backend import Backend
+from menu import Menu
 
 if __name__ == "__main__":
-    Backend()
+    try:
+        Backend()
+
+    # Handle abrupt exits, such as CTRL+C or CTRL+D
+    except (KeyboardInterrupt, EOFError):
+        Menu.gap(1)
+        Menu.Misc.exit_script()

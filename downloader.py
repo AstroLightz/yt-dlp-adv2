@@ -1,5 +1,6 @@
 import yt_dlp as yt
 from threading import Thread
+from pathlib import Path
 
 
 class Downloader:
@@ -46,6 +47,69 @@ class Downloader:
                 print(f"Error: {e}")
 
         return len(titles)
+
+    @staticmethod
+    def get_download_size(path: str, unit: str) -> str:
+        """
+        Get the size of the downloaded file or directory
+        :param path: Direct path to a file or directory
+        :param unit: Unit name: "KB", "MB", "GB", "Auto"
+        :return: String containing the size and unit (bytes)
+        """
+
+        size_b: int = 0
+
+        # Check if path is a file or directory
+        if Path(path).is_dir():
+
+            # Iterate through all files in the directory and calculate the size
+            for file in Path(path).iterdir():
+                size_b += file.stat().st_size
+
+        else:
+            # Get size of single file
+            size_b = Path(path).stat().st_size
+
+        # Convert bytes to desired unit
+        if unit.upper() == "KB" or unit.upper() == "K":
+            # Kilobytes
+            size: float = size_b / 1024
+            return f"{size:.2f} KB"
+
+        elif unit.upper() == "MB" or unit.upper() == "M":
+            # Megabytes
+            size: float = size_b / (1024 * 1024)
+            return f"{size:.2f} MB"
+
+        elif unit.upper() == "GB" or unit.upper() == "G":
+            # Gigabytes
+            size: float = size_b / (1024 * 1024 * 1024)
+            return f"{size:.2f} GB"
+
+        elif unit.upper() == "AUTO":
+            # Auto: Determine unit automatically
+            if size_b < 1024:
+                # Less than 1 KB
+                size: float = size_b
+                return f"{size:.2f} B"
+
+            elif size_b < (1024 ** 2):
+                # Less than 1 MB
+                size: float = size_b / 1024
+                return f"{size:.2f} KB"
+
+            elif size_b < (1024 ** 3):
+                # Less than 1 GB
+                size: float = size_b / (1024 ** 2)
+                return f"{size:.2f} MB"
+
+            else:
+                # Greater than 1 GB
+                size: float = size_b / (1024 ** 3)
+                return f"{size:.2f} GB"
+
+        else:
+            return ""
 
     @staticmethod
     def get_playlist_name(url: str) -> str:
