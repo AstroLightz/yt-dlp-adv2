@@ -247,7 +247,7 @@ class Backend:
                     return True
 
             # Check if playlist already exists
-            elif Utilities.exists_on_disk(path=self.download_dir):
+            elif Utilities.exists_on_disk(path=self.download_dir + self.playlist_name):
 
                 # Playlist already exists
                 Menu.Problem.Warning.duplicate_playlist(title=self.playlist_name)
