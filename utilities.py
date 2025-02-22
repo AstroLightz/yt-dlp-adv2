@@ -1,4 +1,5 @@
 from pathlib import Path
+import yt_dlp as yt
 
 
 class Utilities:
@@ -37,3 +38,18 @@ class Utilities:
 
             # File
             Path(path).unlink()
+
+    @staticmethod
+    def sanitize_list(unclean_list: list[str]) -> list[str]:
+        """
+        Sanitize a list, replacing all invalid characters with underscores using yt-dlp's sanitation
+        :param unclean_list: List to clean
+        :return: Sanitized list of titles
+        """
+
+        clean_list: list[str] = []
+
+        for item in unclean_list:
+            clean_list.append(yt.utils.sanitize_filename(s=item, restricted=True))
+
+        return clean_list

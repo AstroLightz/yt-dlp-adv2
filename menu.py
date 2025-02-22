@@ -37,7 +37,7 @@ class Menu:
         @staticmethod
         def get_input_num(num_entries: int = 3, default_option: int = 1) -> int:
             """
-            Gets a numeric input from the user
+            Gets a numeric input from the user. If num_entries is greater than 8, use `Menu.Input.get_input_long()` instead.
             :param default_option: The default option to select
             :param num_entries: Number of entries in the menu. Must be at least 2
             :return: The selected option
@@ -68,6 +68,100 @@ class Menu:
                 except ValueError:
                     print(
                         f"\n{FAIL} {colored(f"Invalid input. Please enter an integer between 1 and {num_entries}.", "red")}")
+
+        @staticmethod
+        def get_input_long(num_entries: int = 3, default_option: int = 1) -> int:
+            """
+            Similar to get_input_num, but after 9 entries, the list goes to 0, then A, B, C, etc.
+            :param default_option: The default option to select
+            :param num_entries: Number of entries in the menu. Must be at least 2
+            :return: The selected option
+            """
+
+            # Create options list string
+            options_list: str = "["
+
+            # Calculate the max entries string
+            if num_entries > 10:
+                # User chars
+                max_entries_str: str = chr(54 + num_entries)
+
+            elif num_entries > 9:
+                # 10 entries: use 0
+                max_entries_str: str = "0"
+
+            else:
+                # 1-9 entries: use the number
+                max_entries_str = str(num_entries)
+
+            for i in range(num_entries):
+                if i != num_entries - 1:
+
+                    # If the number is less than 10, add it to the list
+                    if i < 9:
+                        options_list += f"{i + 1}/"
+                    # If the number is 10, add 0 to the list
+                    elif i == 9:
+                        options_list += "0/"
+
+                    # If the number is greater than 10, add the letter to the list (A, B, C, etc.)
+                    else:
+                        options_list += f"{chr(55 + i)}/"
+
+                else:
+
+                    if i < 9:
+                        options_list += f"{i + 1}"
+                    elif i == 9:
+                        options_list += "0"
+                    else:
+                        options_list += f"{chr(55 + i)}"
+
+            options_list += "]"
+
+            while True:
+                try:
+                    choice_str: str = (input(
+                        f"> {colored(options_list, "magenta")} {colored(f"({default_option})", "cyan")}: ").upper()
+                                       or default_option)
+
+                    if num_entries > 10:
+
+                        # Convert 0 to 10 and Letters to 10 + LTR
+                        if choice_str == "0":
+                            choice: int = 10
+                        elif choice_str.isalpha():
+                            choice: int = ord(choice_str.upper()) - 54
+                        else:
+                            choice: int = int(choice_str)
+
+                    elif num_entries > 9:
+
+                        # Convert 0 to 10
+                        if choice_str == "0":
+                            choice: int = 10
+                        else:
+                            choice: int = int(choice_str)
+
+                    else:
+
+                        # Convert to num
+                        choice: int = int(choice_str)
+
+                    if choice < 1 or choice > num_entries:
+                        raise ValueError
+
+                    return choice
+
+                except ValueError:
+                    if num_entries > 10:
+                        print(
+                            f"\n{FAIL} {colored(f"Invalid input. Please enter an integer or letter between 1-0 and "
+                                                f"{f"A-{max_entries_str}" if num_entries > 11 else max_entries_str}.", "red")}")
+
+                    else:
+                        print(
+                            f"\n{FAIL} {colored(f"Invalid input. Please enter an integer between 1 and {"0" if num_entries > 9 else num_entries}.", "red")}")
 
         @staticmethod
         def get_input_bool(default_option: bool) -> bool:
@@ -286,6 +380,23 @@ class Menu:
             print(f"  {colored('2', "cyan")}) MKV")
             print(f"  {colored('3', "cyan")}) WEBM")
 
+        @staticmethod
+        def video_quality_status() -> None:
+            """
+            Status message to display while gathering video qualities from URL
+            """
+            print(f"\n{ACTION} Gathering video qualities. Please wait...")
+
+        @staticmethod
+        def video_quality(qualities: list[str]) -> None:
+            """
+            Displays list of video qualities
+            """
+            print(f"\n{INFO} What video quality do you want to use?")
+
+            for i, quality in enumerate(qualities):
+                print(f"  {colored(str(i + 1), 'cyan')}) {quality}")
+
     class Audio:
         """
         Contains all menus for audio downloads
@@ -395,6 +506,13 @@ class Menu:
                 """
                 print(f"\n{WARN} The item {colored(f"\'{title}\'", 'cyan')} already exists. "
                       f"Do you want to re-download it?")
+
+            @staticmethod
+            def no_video_qualities() -> None:
+                """
+                Message to display when no video qualities are found
+                """
+                print(f"\n{WARN} No video qualities found. Downloading with default quality.")
 
         class Error:
             """

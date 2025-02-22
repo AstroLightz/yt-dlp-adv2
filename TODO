@@ -1,1 +1,13 @@
-- Debugging/Testing
+### ADD
+- Confirmation screen with all selected options before download
+- Config file to store options, and allow the user to bring up a menu to change them
+
+
+### FIX
+- Support playlists for video quality
+
+
+### CHANGE
+- Clean up README and add a logo
+- Improve download status. Maybe utilize yt-dlp's custom download status?
+- Improve Action messages (Override them with a complete/fail message when done)

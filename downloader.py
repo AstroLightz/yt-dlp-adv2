@@ -132,7 +132,7 @@ class Downloader:
 
     @staticmethod
     def setup_ytdlp_options(dwn_type: int, file_format: int, item_count: int,
-                            dwn_dir: str, filename_format: int, playlist_name: str) -> dict:
+                            dwn_dir: str, filename_format: int, playlist_name: str, video_quality: str) -> dict:
         """
         Sets up the yt-dlp options
         :param dwn_type: Download type: 1 = Video, 2 = Audio, 3 = Artwork
@@ -141,13 +141,29 @@ class Downloader:
         :param dwn_dir: Download directory
         :param filename_format: Filename format: 1 = (uploader) - (title).(ext), 2 = (title).(ext)
         :param playlist_name: Playlist name
+        :param video_quality: Video quality if specified
         :return: dictionary containing all yt-dlp options
         """
+
+        # Qualities to yt-dlp format
+        ytdlp_qualities: dict[str, str] = {
+
+            "144p": "bestvideo[height=144]",
+            "240p": "bestvideo[height=240]",
+            "360p": "bestvideo[height=360]",
+            "480p": "bestvideo[height=480]",
+            "720p": "bestvideo[height=720][fps<60]",
+            "720p60": "bestvideo[height=720][fps=60]",
+            "1080p60": "bestvideo[height=1080][fps=60]",
+            "2K": "bestvideo[height=1440]",
+            "4K": "bestvideo[height=2160]",
+        }
 
         # Setup yt-dlp options
         ytdlp_options: dict = {
             "logger": Downloader.QuietLogger(),
-            "quiet": True
+            "quiet": True,
+            "restrictfilenames": True,
         }
 
         # -------------------------------------------------------------------------------
@@ -157,17 +173,23 @@ class Downloader:
         # File formats based on download type
         if dwn_type == 1:
 
+            # Default to 'bestvideo+bestaudio' if video quality is not specified
+            if not video_quality:
+                ytdlp_format: str = "bestvideo+bestaudio"
+            else:
+                ytdlp_format: str = f"{ytdlp_qualities[video_quality]}+bestaudio"
+
             # Video
             if file_format == 1:
-                ytdlp_options["format"] = "bestvideo+bestaudio"
+                ytdlp_options["format"] = ytdlp_format
                 ytdlp_options["merge_output_format"] = "mp4"
 
             elif file_format == 2:
-                ytdlp_options["format"] = "bestvideo+bestaudio"
+                ytdlp_options["format"] = ytdlp_format
                 ytdlp_options["merge_output_format"] = "mkv"
 
             elif file_format == 3:
-                ytdlp_options["format"] = "bestvideo+bestaudio"
+                ytdlp_options["format"] = ytdlp_format
                 ytdlp_options["merge_output_format"] = "webm"
 
         elif dwn_type == 2:
@@ -303,3 +325,103 @@ class Downloader:
 
         except (yt.DownloadError, yt.DownloadCancelled) as _:
             return False
+
+    @staticmethod
+    def get_video_qualities(url: str) -> list[str]:
+        """
+        Get the available video qualities
+        :param url: URL of the YouTube video
+        :return: list of all available video qualities, sorted from highest to lowest
+        """
+
+        def get_sort_key(v_quality: str) -> tuple[int, bool]:
+            """
+            Get the key for sorting the qualities
+            :param v_quality: Video quality
+            :return: Tuple of (resolution, is_60_fps), where is_60_fps is True if video is 60 fps
+            """
+
+            # Convert common names back to height
+            # Assume 4K and 2K are always 30 fps since YouTube displays them as just '4K' and '2K'
+            if v_quality == "4K":
+                resolution: int = 2160
+                is_60_fps: bool = False
+
+            elif v_quality == "2K":
+                resolution: int = 1440
+                is_60_fps: bool = False
+
+            # Try to get base resolution (The number before the 'p')
+            elif v_quality.endswith("p60"):
+                is_60_fps: bool = True
+
+                try:
+                    resolution: int = int(v_quality[:-3])
+                except ValueError:
+                    resolution: int = 0
+
+            elif v_quality.endswith("p"):
+                is_60_fps: bool = False
+
+                try:
+                    resolution: int = int(v_quality[:-1])
+                except ValueError:
+                    resolution: int = 0
+
+            else:
+                resolution: int = 0
+                is_60_fps: bool = False
+
+            return resolution, is_60_fps
+
+        qualities: set[str] = set()
+        yt_args = {
+            "noplaylist": True,
+            "quiet": True,
+        }
+
+        with yt.YoutubeDL(yt_args) as ydl:
+            try:
+
+                # Get formats
+                info: dict = ydl.extract_info(url, download=False)
+
+                for fmt in info.get("formats", []):
+                    height: int = fmt.get("height")
+                    fps: int = fmt.get("fps", 0)
+
+                    # Skip if no height
+                    if not height:
+                        continue
+
+                    # Ensure only valid video qualities are added
+                    if height in [144, 240, 360, 480]:
+                        quality: str = f"{height}p"
+
+                    elif height == 720:
+                        quality: str = f"{height}p60" if fps == 60 else f"{height}p"
+
+                    elif height == 1080:
+                        # 1080p must be 60fps to be valid
+                        if fps != 60:
+                            continue
+
+                        quality: str = f"{height}p60"
+
+                    # Shorten 1440p and above to their common names
+                    elif height == 1440:
+                        quality: str = "2K"
+
+                    elif height == 2160:
+                        quality: str = "4K"
+
+                    else:
+                        continue
+
+                    qualities.add(quality)
+
+                return sorted(qualities, key=get_sort_key, reverse=True)
+
+            except Exception as e:
+                print(f"Error: {e}")
+                return []

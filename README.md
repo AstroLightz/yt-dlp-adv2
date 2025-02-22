@@ -1,13 +1,31 @@
 # YouTube Downloader: Advanced 2.0
 
-Remake of the original yt-dlp-adv, written in Python 3.
+Remake of the original yt-dlp-adv, written in Python.
 A clean CLI script to download videos, audio, and thumbnails from YouTube.
 
 This Script utilizes <b>[yt-dlp](https://github.com/yt-dlp/yt-dlp)</b> for downloading content from YouTube.
 
-## Installation:
+<!-- Table of Contents -->
 
-This program requires <b>Python 3.13</b> or higher.
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Project Stages](#project-stages)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
+
+## Requirements
+
+- A <b>Linux</b>-based system.
+    - Windows WSL and macOS untested
+
+
+- <b>Python 3.13</b> or higher
+- <b>ImageMagick</b>
+
+## Installation:
 
 To install the program, run the following command in your terminal:
 
@@ -29,23 +47,41 @@ python3 main.py
 ```
 
 ## Features
+
 - Download videos, audio, and thumbnails from YouTube
 - Download playlists or single items
 - Choose what file format to use
 - Choose filename format to use
-  - (uploader) - (title).(ext) or (title).(ext)
-
+    - e.g. (uploader) - (title).(ext)
 
 
 - Dynamic directory location for each type of download
-  - Music: ~/Music
-  - Videos: ~/Videos
-  - Artwork: ~/Pictures
+    - Music: ~/Music
+    - Videos: ~/Videos
+    - Artwork: ~/Pictures
 
 - Custom download status messages
 - See overview of download after download is complete
 
 More features to come!
+
+## Screenshots
+
+### Main Menu
+
+<img src=".github/screenshots/main_menu.png" alt="Main Menu of yt-dlp-adv script" width="50%">
+
+### Menu Options
+
+<img src=".github/screenshots/menu_choices.png" alt="Menu Options of yt-dlp-adv script" width="50%">
+
+### Download Status
+
+<img src=".github/screenshots/download_status.png" alt="Download Status of yt-dlp-adv script" width="50%">
+
+### Download Summary
+
+<img src=".github/screenshots/download_summary.png" alt="Download Summary of yt-dlp-adv script" width="50%">
 
 ## Project Stages:
 
@@ -72,7 +108,8 @@ the output/program, create an Issue and include the YT link.
 
 ## License:
 
-This project is released under the [Unlicense](https://choosealicense.com/licenses/unlicense/). Check the [LICENSE](./LICENSE) file for more information.
+This project is released under the [Unlicense](https://choosealicense.com/licenses/unlicense/). Check
+the [LICENSE](./LICENSE) file for more information.
 
 ## Acknowledgements:
 

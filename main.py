@@ -6,6 +6,9 @@ main.py is the main entry point for the program
 - Backend is in backend.py
 - Menu print messages and input is in menu.py
 - yt-dlp handling is in downloader.py
+- Utility functions are in utilities.py
+
+This project is licensed under the Unlicensed license. You may do whatever you want with it.
 """
 
 from backend import Backend

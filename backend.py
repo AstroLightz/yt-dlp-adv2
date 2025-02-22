@@ -21,6 +21,10 @@ class Backend:
         self.switch_mode = None
         self.duplicate = None
 
+        # Only use for video downloads
+        self.video_qualities = None
+        self.video_quality = None
+
         self.num_items = None
         self.dwn_size = None
         self.failed_downloads: list[str] = []
@@ -35,7 +39,11 @@ class Backend:
         self.file_ext = None
 
         self.titles: list[str] = []
+        self.titles_safe: list[str] = []
+
         self.uploaders: list[str] = []
+        self.uploaders_safe: list[str] = []
+
         self.urls: list[str] = []
         self.playlist_name: str = ""
 
@@ -73,6 +81,11 @@ class Backend:
         # URL
         self.menu_get_url()
 
+        # If download type is Video, ask for video quality. Does not support playlists currently.
+        if self.dwn_type == 1 and self.item_count == 1:
+            Menu.Video.video_quality_status()
+            self.menu_video_quality()
+
         # Download items
         self.download()
 
@@ -101,6 +114,23 @@ class Backend:
             self.file_ext: str = "webm"
 
         self.download_dir += f"{self.file_ext.upper()}/"
+
+    def menu_video_quality(self):
+
+        # Get qualities
+        self.video_qualities: list[str] = Downloader.get_video_qualities(self.yt_url)
+
+        # Skip if no qualities found
+        if not self.video_qualities:
+            Menu.Problem.Warning.no_video_qualities()
+            return
+
+        Menu.Video.video_quality(qualities=self.video_qualities)
+        Menu.gap(1)
+
+        # Get video quality from the list
+        self.video_quality: str = self.video_qualities[Menu.Input.get_input_long(
+            num_entries=len(self.video_qualities), default_option=1) - 1]
 
     def menu_audio(self):
         Menu.Audio.audio_menu()
@@ -283,6 +313,11 @@ class Backend:
         # Extract info from URL
         self.titles, self.uploaders, self.urls = Downloader.extract_info(self.item_count, self.yt_url)
 
+        # Convert titles and uploaders to a safe version, replacing invalid characters with underscores
+        # Save them to a new list
+        self.titles_safe: list[str] = Utilities.sanitize_list(unclean_list=self.titles)
+        self.uploaders_safe: list[str] = Utilities.sanitize_list(unclean_list=self.uploaders)
+
         # If just a single item, add the yt url to the list
         if self.item_count == 1:
             self.urls.append(self.yt_url)
@@ -295,20 +330,24 @@ class Backend:
             return
 
         # Set up yt-dlp options
-        self.ytdlp_options = Downloader.setup_ytdlp_options(self.dwn_type, self.file_format, self.item_count,
-                                                            self.download_dir, self.filename_format, self.playlist_name)
+        self.ytdlp_options = Downloader.setup_ytdlp_options(dwn_type=self.dwn_type, file_format=self.file_format,
+                                                            item_count=self.item_count, dwn_dir=self.download_dir,
+                                                            filename_format=self.filename_format,
+                                                            playlist_name=self.playlist_name,
+                                                            video_quality=self.video_quality)
 
         Menu.Download.starting_download(count=self.num_items)
 
         # Download each item
-        for i, title in enumerate(self.titles):
+        for i, title in enumerate(self.titles_safe):
 
             # Include uploader in title if using uploader - title filename format
+            # Use pretty title and uploader for display
             if self.filename_format == 1:
                 Menu.Download.download_status(cur_item=i + 1, total_items=self.num_items,
-                                              title=f"{self.uploaders[i]} - {title}")
+                                              title=f"{self.uploaders[i]} - {self.titles[i]}")
             else:
-                Menu.Download.download_status(cur_item=i + 1, total_items=self.num_items, title=title)
+                Menu.Download.download_status(cur_item=i + 1, total_items=self.num_items, title=self.titles[i])
 
             stdout.flush()
 
@@ -316,7 +355,7 @@ class Backend:
             if self.dwn_type != 3:
                 if self.filename_format == 1:
                     # (uploader) - (title).(ext)
-                    self.download_path = f"{self.download_dir}{self.uploaders[i]} - {title}.{self.file_ext}"
+                    self.download_path = f"{self.download_dir}{self.uploaders_safe[i]} - {title}.{self.file_ext}"
                 elif self.filename_format == 2:
                     # (title).(ext)
                     self.download_path = f"{self.download_dir}{title}.{self.file_ext}"
