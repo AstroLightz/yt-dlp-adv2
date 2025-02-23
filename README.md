@@ -69,19 +69,19 @@ More features to come!
 
 ### Main Menu
 
-<img src=".github/screenshots/main_menu.png" alt="Main Menu of yt-dlp-adv script" width="50%">
+<img src=".github/screenshots/main_menu.png" alt="Main Menu of yt-dlp-adv script">
 
 ### Menu Options
 
-<img src=".github/screenshots/menu_choices.png" alt="Menu Options of yt-dlp-adv script" width="50%">
+<img src=".github/screenshots/menu_choices.png" alt="Menu Options of yt-dlp-adv script">
 
 ### Download Status
 
-<img src=".github/screenshots/download_status.png" alt="Download Status of yt-dlp-adv script" width="50%">
+<img src=".github/screenshots/download_status.png" alt="Download Status of yt-dlp-adv script">
 
 ### Download Summary
 
-<img src=".github/screenshots/download_summary.png" alt="Download Summary of yt-dlp-adv script" width="50%">
+<img src=".github/screenshots/download_summary.png" alt="Download Summary of yt-dlp-adv script">
 
 ## Project Stages:
 
