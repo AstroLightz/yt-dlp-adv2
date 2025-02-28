@@ -342,14 +342,14 @@ class Downloader:
             """
 
             # Convert common names back to height
-            # Assume 4K and 2K are always 30 fps since YouTube displays them as just '4K' and '2K'
+            # 2K and 4K just use '60' when they're 60 fps
             if v_quality == "4K":
                 resolution: int = 2160
-                is_60_fps: bool = False
+                is_60_fps: bool = True if v_quality.endswith("60") else False
 
             elif v_quality == "2K":
                 resolution: int = 1440
-                is_60_fps: bool = False
+                is_60_fps: bool = True if v_quality.endswith("60") else False
 
             # Try to get base resolution (The number before the 'p')
             elif v_quality.endswith("p60"):
@@ -410,10 +410,10 @@ class Downloader:
 
                     # Shorten 1440p and above to their common names
                     elif height == 1440:
-                        quality: str = "2K"
+                        quality: str = "2K60" if fps == 60 else "2K"
 
                     elif height == 2160:
-                        quality: str = "4K"
+                        quality: str = "4K60" if fps == 60 else "4K"
 
                     else:
                         continue

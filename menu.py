@@ -23,11 +23,18 @@ class Menu:
         """
 
         @staticmethod
-        def exit_script():
+        def exit_script() -> None:
             """
             Message when exiting the script, such as using CTRL+C
             """
             print(f"\n{ACTION} Exiting script...")
+
+        @staticmethod
+        def download_aborted() -> None:
+            """
+            Message when a download is aborted (Choosing N on the confirmation menu)
+            """
+            print(f"\n{WARN} {colored("Download aborted.", "yellow")}")
 
     class Input:
         """
@@ -266,9 +273,18 @@ class Menu:
             print(f"  {colored('2', "cyan")}) Playlist")
 
         @staticmethod
-        def filename_format() -> None:
+        def filename_format_s() -> None:
             """
-            Get the format for the filename (uploader and title or just title)
+            [Single Item] Get the format for the filename
+            """
+            print(f"\n{INFO} What format do you want the filenames to be?")
+            print(f"  {colored('1', "cyan")}) (uploader) - (title).(ext)")
+            print(f"  {colored('2', "cyan")}) (title).(ext)")
+
+        @staticmethod
+        def filename_format_p() -> None:
+            """
+            [Playlist] Get the format for the filename
             """
             print(f"\n{INFO} What format do you want the filenames to be?")
             print(f"  {colored('1', "cyan")}) (uploader) - (title).(ext)")
@@ -280,6 +296,78 @@ class Menu:
             Get the URL of the item
             """
             print(f"\n{INFO} Enter the YouTube URL:")
+
+        @staticmethod
+        def confirmation_screen(dwn_type: int, file_format: int, item_count: int, filename_format: int) -> None:
+            """
+            Display a confirmation screen with all chosen options
+            :param dwn_type: Download type
+            :param file_format: File format
+            :param item_count: Item count (Single Item/Playlist)
+            :param filename_format: Filename format
+            """
+
+            # Key/values for each option
+            options: dict[str, dict[int, str]] = {
+                "dwn_type": {
+                    1: "Video",
+                    2: "Audio",
+                    3: "Artwork"
+                },
+                "file_format_vid": {
+                    1: "MP4",
+                    2: "MKV",
+                    3: "WEBM"
+                },
+                "file_format_aud": {
+                    1: "MP3",
+                    2: "OGG",
+                    3: "WAV",
+                    4: "FLAC"
+                },
+                "file_format_art": {
+                    1: "PNG",
+                    2: "JPG"
+                },
+                "item_count": {
+                    1: "Single Item",
+                    2: "Playlist"
+                },
+                "filename_format_s": {
+                    1: "(uploader) - (title).(ext)",
+                    2: "(title).(ext)"
+                },
+                "filename_format_p": {
+                    1: "(uploader) - (title).(ext)",
+                    2: "(title).(ext)"
+                }
+            }
+
+            # Get all values for each option
+            v_dwn_type: str = options["dwn_type"][dwn_type]
+
+            if dwn_type == 1:
+                v_file_format: str = options["file_format_vid"][file_format]
+            elif dwn_type == 2:
+                v_file_format: str = options["file_format_aud"][file_format]
+            else:
+                v_file_format: str = options["file_format_art"][file_format]
+
+            v_item_count: str = options["item_count"][item_count]
+
+            if item_count == 1:
+                v_filename_format: str = options["filename_format_s"][filename_format]
+            else:
+                v_filename_format: str = options["filename_format_p"][filename_format]
+
+            # Display confirmation screen
+            print(f"\n{INFO} Chosen Options:"
+                  f"\n - Download Type: {colored(f"'{v_dwn_type}'", "cyan")}"
+                  f"\n - File Format: {colored(f"'{v_file_format}'", "cyan")}"
+                  f"\n - Mode: {colored(f"'{v_item_count}'", "cyan")}"
+                  f"\n - Filename Format: {colored(f"'{v_filename_format}'", "cyan")}\n")
+
+            print(f"{INFO} Proceed with the download?")
 
     class Download:
         """
@@ -427,6 +515,31 @@ class Menu:
             print(f"  {colored('1', "cyan")}) PNG")
             print(f"  {colored('2', "cyan")}) JPG")
 
+    class Arguments:
+        """
+        Contains all menus for arguments passed to the script
+        """
+
+        @staticmethod
+        def help_menu() -> None:
+            """
+            Displays help menu
+            """
+            print(f"{INFO} Usage: yt-dlp-adv2 {CYAN}[options]{RESET}"
+                  f"\n\nOptions:"
+                  f"\n{CYAN}-h, --help{RESET}: Show this help message."
+                  f"\n{CYAN}-v, --version{RESET}: Show script version.")
+
+        @staticmethod
+        def show_version(v: str, g_commits: str) -> None:
+            """
+            Displays script version and GitHub link for commits/updates
+            :param v: Version string
+            :param g_commits: GitHub commits link
+            """
+            print(f"{INFO} Script version: {colored(v, 'cyan')}")
+            print(f"{INFO} GitHub commits: {colored(g_commits, 'cyan')}")
+
     class Problem:
         """
         Any problems the script may encounter, such as duplicate files, bad URLs, or errors
@@ -518,6 +631,14 @@ class Menu:
             """
             Any errors the script may encounter
             """
+
+            @staticmethod
+            def error_msg(error: Exception) -> None:
+                """
+                Generic error message
+                :param error: Exception
+                """
+                print(f"{FAIL} {colored(error, "red")}")
 
             @staticmethod
             def invalid_url() -> None:

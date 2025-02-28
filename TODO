@@ -1,6 +1,8 @@
 ### ADD
-- Confirmation screen with all selected options before download
 - Config file to store options, and allow the user to bring up a menu to change them
+- Filename Format: [item #] - %uploader% - %title%
+    - Download logic must be changed to make this possible. I.E instead of extracting all URLS from a playlist URL,
+    pass the playlist URL and use 'playlist_index'. Requires rework of download status too.
 
 
 ### FIX

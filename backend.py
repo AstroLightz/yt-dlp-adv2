@@ -81,6 +81,9 @@ class Backend:
         # URL
         self.menu_get_url()
 
+        # Confirmation
+        self.menu_confirmation()
+
         # If download type is Video, ask for video quality. Does not support playlists currently.
         if self.dwn_type == 1 and self.item_count == 1:
             Menu.Video.video_quality_status()
@@ -191,10 +194,21 @@ class Backend:
     ### Get filename format ###
 
     def menu_filename_format(self):
-        Menu.Main.filename_format()
-        Menu.gap(1)
 
-        self.filename_format: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
+        # Handle different filename formats prompts
+        if self.item_count == 1:
+            # Single item
+            Menu.Main.filename_format_s()
+            Menu.gap(1)
+
+            self.filename_format: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
+
+        elif self.item_count == 2:
+            # Playlist
+            Menu.Main.filename_format_p()
+            Menu.gap(1)
+
+            self.filename_format: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
 
     ### Get URL ###
 
@@ -202,6 +216,16 @@ class Backend:
         Menu.Main.get_url()
 
         self.yt_url: str = Menu.Input.get_input_url()
+
+    def menu_confirmation(self):
+        Menu.Main.confirmation_screen(dwn_type=self.dwn_type, file_format=self.file_format,
+                                      item_count=self.item_count, filename_format=self.filename_format)
+
+        choice: bool = Menu.Input.get_input_bool(default_option=False)
+
+        if not choice:
+            Menu.Misc.download_aborted()
+            exit()
 
     ### Download ###
 
@@ -363,7 +387,7 @@ class Backend:
                 # yt-dlp downloads thumbnails as webp
                 self.download_path = f"{self.download_dir}{title}.webp"
 
-            dwn_status: bool = Downloader.download(self.urls[i], self.ytdlp_options)
+            dwn_status: bool = Downloader.download(url=self.urls[i], ytdlp_options=self.ytdlp_options)
 
             # If item is a thumbnail, convert to specific format
             if self.dwn_type == 3:
