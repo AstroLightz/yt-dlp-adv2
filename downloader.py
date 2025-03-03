@@ -258,17 +258,15 @@ class Downloader:
         return ytdlp_options
 
     @staticmethod
-    def extract_info(item_count: int, yt_url: str) -> tuple[list[str], list[str], list[str]]:
+    def extract_info(yt_url: str) -> tuple[list[str], list[str]]:
         """
-        Extract all info from a YouTube url
-        :param item_count: Number of items: 1 = Single item, 2 = Playlist
-        :param yt_url: YouTube URL
-        :return: Returns a tuple of (titles, uploaders, urls)
+        Extract all info from a YouTube URL
+        :param yt_url: URL
+        :return: Returns a tuple of (titles, uploaders)
         """
 
         titles: list[str] = []
         uploaders: list[str] = []
-        urls: list[str] = []
 
         # Setup yt-dlp args
         ydl_args = {
@@ -293,22 +291,60 @@ class Downloader:
                     titles.append(entry.get("title", "Unknown"))
                     uploaders.append(entry.get("uploader", "Unknown"))
 
-                    # Only collect urls if it's a playlist
-                    if item_count == 2:
-                        urls.append(entry.get("url", "Unknown"))
 
             except Exception as e:
                 print(f"Error: {e}")
 
-        return titles, uploaders, urls
+        return titles, uploaders
 
     @staticmethod
-    def download(url: str, ytdlp_options: dict) -> bool:
+    def download(url: str, ytdlp_options: dict, title_format: str, titles: list[str], uploaders: list[str],
+                 progress_callback=None) -> [int, int]:
         """
         Download an item
         :param url: YouTube URL
         :param ytdlp_options: Dictionary of yt-dlp options
+        :param title_format: Title format using {}s
+        :param titles: List of titles
+        :param uploaders: List of uploaders
+        :param progress_callback: Progress callback
+        :return: Returns True if successful
         """
+
+        dwn_status: int = 0
+        cur_item: int = 0
+
+        # Setup progress hook
+        def progress_hook(data: dict):
+
+            nonlocal dwn_status, cur_item
+
+            # Get status
+            status: str = data.get("status")
+
+            # Get current item
+            i: int = data.get("playlist_index", 1)
+
+            # Get title
+            if "{1}" in title_format:
+                # Uploader - Title
+                title = title_format.format(uploaders[i - 1], titles[i - 1])
+
+            else:
+                # Title
+                title = title_format.format(titles[i - 1])
+
+            # Get values if downloading
+            if status == "downloading" or status == "finished":
+                downloaded: int = data.get("downloaded_bytes", 0)
+                total: int = data.get("total_bytes") or data.get("total_bytes_estimate", 1)
+
+                # Call progress callback
+                if progress_callback:
+                    dwn_status, cur_item = progress_callback(status, downloaded, total, i, len(titles), title)
+
+        # Add progress hook
+        ytdlp_options["progress_hooks"] = [progress_hook]
 
         def download_thread():
             with yt.YoutubeDL(ytdlp_options) as ydl:
@@ -321,10 +357,10 @@ class Downloader:
             # Wait for the download to finish
             thread.join()
 
-            return True
+            return dwn_status, cur_item
 
         except (yt.DownloadError, yt.DownloadCancelled) as _:
-            return False
+            return -1, cur_item
 
     @staticmethod
     def get_video_qualities(url: str) -> list[str]:

@@ -400,7 +400,7 @@ class Menu:
             :param title: Title of the item being downloaded
             """
             print(
-                f"{colored(f"({cur_item}/{total_items})", "yellow")} Downloading: {colored(f"\'{title}\'", "cyan")} ... ",
+                f"\r{colored(f"({cur_item}/{total_items})", "yellow")} Downloading: {colored(f"\'{title}\'", "cyan")} ... ",
                 end="")
 
         @staticmethod

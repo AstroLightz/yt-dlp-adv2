@@ -44,7 +44,6 @@ class Backend:
         self.uploaders: list[str] = []
         self.uploaders_safe: list[str] = []
 
-        self.urls: list[str] = []
         self.playlist_name: str = ""
 
         self.ytdlp_options: dict = {}
@@ -323,6 +322,63 @@ class Backend:
         # No Issues
         return True
 
+    # Get data from downloader and execute code based on it
+    @staticmethod
+    def download_hook(status: str, downloaded: int, total: int, cur_item: int, total_items: int, title: str) -> [int,
+                                                                                                                 int]:
+        """
+        Get progress from downloader
+        :param status: Download status from the progress_hook
+        :param downloaded: Downloaded bytes
+        :param total: Total bytes in download
+        :param cur_item: Current item
+        :param total_items: Total items
+        :param title: Title of item
+        """
+
+        # TODO: Make this work for Playlists. Currently, doesn't display status for each item, just the playlist itself.
+
+        if status == "downloading":
+            Menu.Download.download_status(cur_item=cur_item, total_items=total_items, title=title)
+            stdout.flush()
+            return 0, cur_item
+
+        elif status == "finished":
+            return 1, cur_item
+
+        elif status == "error":
+            return -1, cur_item
+
+        else:
+            return 0, cur_item
+
+    # Construct download paths
+    def construct_paths(self, cur_item: int, titles: list[str], uploaders: list[str]):
+
+        # Set index
+        i: int = cur_item - 1
+
+        if self.dwn_type != 3:
+            if self.filename_format == 1:
+                # (uploader) - (title).(ext)
+                self.download_path = f"{self.download_dir}{uploaders[i]} - {titles[i]}.{self.file_ext}"
+
+            elif self.filename_format == 2:
+                # (title).(ext)
+                self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
+
+        else:
+            # yt-dlp downloads thumbnails as webp
+            self.download_path = f"{self.download_dir}{titles[i]}.webp"
+
+        # If item is a thumbnail, convert to specific format
+        if self.dwn_type == 3:
+            Image(filename=self.download_path).convert(self.file_ext).save(
+                filename=f"{self.download_dir}{titles[i]}.{self.file_ext}")
+
+            # Delete original thumbnail
+            Path.unlink(Path(self.download_path))
+
     def download(self):
         """
         Set up and download items
@@ -335,18 +391,15 @@ class Backend:
         self.num_items: int = Downloader.get_title_count(self.yt_url)
 
         # Extract info from URL
-        self.titles, self.uploaders, self.urls = Downloader.extract_info(self.item_count, self.yt_url)
+        self.titles, self.uploaders = Downloader.extract_info(self.yt_url)
 
         # Convert titles and uploaders to a safe version, replacing invalid characters with underscores
         # Save them to a new list
         self.titles_safe: list[str] = Utilities.sanitize_list(unclean_list=self.titles)
         self.uploaders_safe: list[str] = Utilities.sanitize_list(unclean_list=self.uploaders)
 
-        # If just a single item, add the yt url to the list
-        if self.item_count == 1:
-            self.urls.append(self.yt_url)
         # If a playlist, get the playlist name
-        elif self.item_count == 2:
+        if self.item_count == 2:
             self.playlist_name: str = Downloader.get_playlist_name(self.yt_url)
 
         # Perform checks
@@ -362,46 +415,79 @@ class Backend:
 
         Menu.Download.starting_download(count=self.num_items)
 
-        # Download each item
-        for i, title in enumerate(self.titles_safe):
+        # Construct title format
+        title_format: str = ""
 
-            # Include uploader in title if using uploader - title filename format
-            # Use pretty title and uploader for display
+        if self.dwn_type != 3:
             if self.filename_format == 1:
-                Menu.Download.download_status(cur_item=i + 1, total_items=self.num_items,
-                                              title=f"{self.uploaders[i]} - {self.titles[i]}")
-            else:
-                Menu.Download.download_status(cur_item=i + 1, total_items=self.num_items, title=self.titles[i])
+                # (uploader) - (title)
+                title_format: str = "{0} - {1}"
 
-            stdout.flush()
+            elif self.filename_format == 2:
+                # (title)
+                title_format: str = "{0}"
 
-            # Construct download path
-            if self.dwn_type != 3:
-                if self.filename_format == 1:
-                    # (uploader) - (title).(ext)
-                    self.download_path = f"{self.download_dir}{self.uploaders_safe[i]} - {title}.{self.file_ext}"
-                elif self.filename_format == 2:
-                    # (title).(ext)
-                    self.download_path = f"{self.download_dir}{title}.{self.file_ext}"
-            else:
-                # yt-dlp downloads thumbnails as webp
-                self.download_path = f"{self.download_dir}{title}.webp"
+        else:
+            # Artwork uses title
+            title_format: str = "{0}"
 
-            dwn_status: bool = Downloader.download(url=self.urls[i], ytdlp_options=self.ytdlp_options)
+        # Download
+        download_complete, cur_item = Downloader.download(url=self.yt_url, ytdlp_options=self.ytdlp_options,
+                                                          title_format=title_format,
+                                                          titles=self.titles, uploaders=self.uploaders,
+                                                          progress_callback=Backend.download_hook)
 
-            # If item is a thumbnail, convert to specific format
-            if self.dwn_type == 3:
-                Image(filename=self.download_path).convert(self.file_ext).save(
-                    filename=f"{self.download_dir}{title}.{self.file_ext}")
+        if download_complete == 1:
+            self.construct_paths(cur_item=cur_item, titles=self.titles_safe, uploaders=self.uploaders_safe)
 
-                # Delete original thumbnail
-                Path.unlink(Path(self.download_path))
+            # Download complete
+            Menu.Download.download_complete()
 
-            if dwn_status:
-                Menu.Download.download_complete()
-            else:
-                Menu.Download.download_failed()
-                self.failed_downloads.append(title)
+        elif download_complete == -1:
+            # Download failed
+            Menu.Download.download_failed()
+            self.failed_downloads.append(self.titles_safe[cur_item])
+
+        # # Download each item
+        # for i, title in enumerate(self.titles_safe):
+        #
+        #     # Include uploader in title if using uploader - title filename format
+        #     # Use pretty title and uploader for display
+        #     if self.filename_format == 1:
+        #         Menu.Download.download_status(cur_item=i + 1, total_items=self.num_items,
+        #                                       title=f"{self.uploaders[i]} - {self.titles[i]}")
+        #     else:
+        #         Menu.Download.download_status(cur_item=i + 1, total_items=self.num_items, title=self.titles[i])
+        #
+        #     stdout.flush()
+        #
+        # # Construct download path
+        # if self.dwn_type != 3:
+        #     if self.filename_format == 1:
+        #         # (uploader) - (title).(ext)
+        #         self.download_path = f"{self.download_dir}{self.uploaders_safe[i]} - {title}.{self.file_ext}"
+        #     elif self.filename_format == 2:
+        #         # (title).(ext)
+        #         self.download_path = f"{self.download_dir}{title}.{self.file_ext}"
+        # else:
+        #     # yt-dlp downloads thumbnails as webp
+        #     self.download_path = f"{self.download_dir}{title}.webp"
+        #
+        # dwn_status: bool = Downloader.download(url=self.urls[i], ytdlp_options=self.ytdlp_options)
+        #
+        # # If item is a thumbnail, convert to specific format
+        # if self.dwn_type == 3:
+        #     Image(filename=self.download_path).convert(self.file_ext).save(
+        #         filename=f"{self.download_dir}{title}.{self.file_ext}")
+        #
+        #     # Delete original thumbnail
+        #     Path.unlink(Path(self.download_path))
+        #
+        # if dwn_status:
+        #     Menu.Download.download_complete()
+        # else:
+        #     Menu.Download.download_failed()
+        #     self.failed_downloads.append(title)
 
         # Get download size. Use different path based on download type
         if self.item_count == 1:
