@@ -1,6 +1,7 @@
 import yt_dlp as yt
 from threading import Thread
 from pathlib import Path
+from math import ceil
 
 
 class Downloader:
@@ -298,12 +299,14 @@ class Downloader:
         return titles, uploaders
 
     @staticmethod
-    def download(url: str, ytdlp_options: dict, title_format: str, titles: list[str], uploaders: list[str],
+    def download(url: str, ytdlp_options: dict, file_format: str, title_format: str, titles: list[str],
+                 uploaders: list[str],
                  progress_callback=None) -> [int, int]:
         """
         Download an item
         :param url: YouTube URL
         :param ytdlp_options: Dictionary of yt-dlp options
+        :param file_format: File format name
         :param title_format: Title format using {}s
         :param titles: List of titles
         :param uploaders: List of uploaders
@@ -312,36 +315,58 @@ class Downloader:
         """
 
         dwn_status: int = 0
-        cur_item: int = 0
+        cur_item: int = 1
+        new_item: int = 0
+        cur_process: int = 1
 
         # Setup progress hook
         def progress_hook(data: dict):
 
-            nonlocal dwn_status, cur_item
+            nonlocal dwn_status, cur_item, new_item, cur_process
 
             # Get status
             status: str = data.get("status")
 
-            # Get current item
-            i: int = data.get("playlist_index", 1)
-
             # Get title
             if "{1}" in title_format:
                 # Uploader - Title
-                title = title_format.format(uploaders[i - 1], titles[i - 1])
+                title = title_format.format(uploaders[cur_item - 1], titles[cur_item - 1])
 
             else:
                 # Title
-                title = title_format.format(titles[i - 1])
+                title = title_format.format(titles[cur_item - 1])
 
             # Get values if downloading
             if status == "downloading" or status == "finished":
                 downloaded: int = data.get("downloaded_bytes", 0)
                 total: int = data.get("total_bytes") or data.get("total_bytes_estimate", 1)
 
-                # Call progress callback
-                if progress_callback:
-                    dwn_status, cur_item = progress_callback(status, downloaded, total, i, len(titles), title)
+                # Increment current process when download is finished
+                if status == "finished" and cur_item < len(titles):
+                    cur_process += 1
+
+                    # Converting WEBM to other formats has 2 "finished" status.
+                    if file_format.upper() != "WEBM":
+                        new_item = ceil(cur_process / 2)
+
+                    else:
+                        # WEBM only has 1 "finished" status
+                        new_item = cur_process
+
+                # Move to next line if the downloaded item is completely finished
+                if new_item > cur_item:
+
+                    # Call progress callback and print new line
+                    if progress_callback:
+                        dwn_status, cur_item = progress_callback(status, downloaded, total, cur_item, len(titles),
+                                                                 title)
+                        print()
+
+                    cur_item = new_item
+
+                # Call progress callback with no new line since cur_item hasn't changed
+                elif progress_callback:
+                    dwn_status, cur_item = progress_callback(status, downloaded, total, cur_item, len(titles), title)
 
         # Add progress hook
         ytdlp_options["progress_hooks"] = [progress_hook]

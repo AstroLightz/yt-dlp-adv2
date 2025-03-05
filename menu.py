@@ -1,4 +1,5 @@
 from termcolor import colored
+from utilities import Utilities
 
 # Message types
 SUCCESS: str = f"{colored('✔', "green")}"
@@ -307,58 +308,12 @@ class Menu:
             :param filename_format: Filename format
             """
 
-            # Key/values for each option
-            options: dict[str, dict[int, str]] = {
-                "dwn_type": {
-                    1: "Video",
-                    2: "Audio",
-                    3: "Artwork"
-                },
-                "file_format_vid": {
-                    1: "MP4",
-                    2: "MKV",
-                    3: "WEBM"
-                },
-                "file_format_aud": {
-                    1: "MP3",
-                    2: "OGG",
-                    3: "WAV",
-                    4: "FLAC"
-                },
-                "file_format_art": {
-                    1: "PNG",
-                    2: "JPG"
-                },
-                "item_count": {
-                    1: "Single Item",
-                    2: "Playlist"
-                },
-                "filename_format_s": {
-                    1: "(uploader) - (title).(ext)",
-                    2: "(title).(ext)"
-                },
-                "filename_format_p": {
-                    1: "(uploader) - (title).(ext)",
-                    2: "(title).(ext)"
-                }
-            }
-
-            # Get all values for each option
-            v_dwn_type: str = options["dwn_type"][dwn_type]
-
-            if dwn_type == 1:
-                v_file_format: str = options["file_format_vid"][file_format]
-            elif dwn_type == 2:
-                v_file_format: str = options["file_format_aud"][file_format]
-            else:
-                v_file_format: str = options["file_format_art"][file_format]
-
-            v_item_count: str = options["item_count"][item_count]
-
-            if item_count == 1:
-                v_filename_format: str = options["filename_format_s"][filename_format]
-            else:
-                v_filename_format: str = options["filename_format_p"][filename_format]
+            # Get names of download choices
+            v_dwn_type: str = Utilities.get_download_type(dwn_type=dwn_type)
+            v_file_format: str = Utilities.get_file_format(file_format=file_format, dwn_type=dwn_type)
+            v_item_count: str = Utilities.get_download_mode(item_count=item_count)
+            v_filename_format: str = Utilities.get_filename_format(item_count=item_count,
+                                                                   filename_format=filename_format)
 
             # Display confirmation screen
             print(f"\n{INFO} Chosen Options:"
@@ -392,16 +347,39 @@ class Menu:
                   f"Please be patient as this might take a while...\n")
 
         @staticmethod
-        def download_status(cur_item: int, total_items: int, title: str) -> None:
+        def download_status(cur_item: int, total_items: int, downloaded: int, total: int, status: str,
+                            title: str) -> None:
             """
             Download status message
             :param cur_item: Current item out of the total number of items to download
             :param total_items: Total number of items to download
+            :param downloaded: Downloaded bytes
+            :param total: Total bytes
+            :param status: Status of download, from progress_hook
             :param title: Title of the item being downloaded
             """
+
+            # Convert sizes
+            c_downloaded: str = Utilities.convert_bytes(downloaded)
+            c_total: str = Utilities.convert_bytes(total)
+
+            # Remove previous line
+            print("", end="\x1b[1K\r")
+
+            # Set status symbol
+            if status == "downloading":
+                sym_status: str = colored("⧗", "cyan")
+            elif status == "finished":
+                sym_status: str = colored("✔", "green")
+            elif status == "error":
+                sym_status: str = colored("✘", "red")
+            else:
+                sym_status: str = colored("?", "yellow")
+
             print(
-                f"\r{colored(f"({cur_item}/{total_items})", "yellow")} Downloading: {colored(f"\'{title}\'", "cyan")} ... ",
-                end="")
+                f"{colored(f"({cur_item}/{total_items})", "yellow")} [{sym_status}] "
+                f"{colored(f"\'{title}\'", "cyan")}: {c_downloaded} / {c_total} "
+                f"{colored(f"({round((downloaded / total) * 100, 1)}%)", "magenta")}", end="")
 
         @staticmethod
         def download_complete() -> None:

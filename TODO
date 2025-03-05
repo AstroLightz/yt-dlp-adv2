@@ -13,3 +13,11 @@
 - Clean up README and add a logo
 - Improve download status. Maybe utilize yt-dlp's custom download status?
 - Improve Action messages (Override them with a complete/fail message when done)
+- For Videos, get video quality before confirmation screen
+
+
+### FEATURE BRANCH
+- Clean up unused/redundant code
+- Change display to make it more clear when yt-dlp is doing post-processing.
+Currently, it replaces the download/total bytes with its post-processing bytes, which leads to confusion with
+download complete size.
