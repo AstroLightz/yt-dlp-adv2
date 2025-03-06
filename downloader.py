@@ -299,14 +299,14 @@ class Downloader:
         return titles, uploaders
 
     @staticmethod
-    def download(url: str, ytdlp_options: dict, file_format: str, title_format: str, titles: list[str],
+    def download(url: str, ytdlp_options: dict, dwn_type: int, title_format: str, titles: list[str],
                  uploaders: list[str],
                  progress_callback=None) -> [int, int]:
         """
         Download an item
         :param url: YouTube URL
         :param ytdlp_options: Dictionary of yt-dlp options
-        :param file_format: File format name
+        :param dwn_type: Download type
         :param title_format: Title format using {}s
         :param titles: List of titles
         :param uploaders: List of uploaders
@@ -319,10 +319,16 @@ class Downloader:
         new_item: int = 0
         cur_process: int = 1
 
+        # Saved downloaded/total when entering post-processing
+        s_downloaded: int = 0
+        s_total: int = 0
+
+        post_processing: bool = False
+
         # Setup progress hook
         def progress_hook(data: dict):
 
-            nonlocal dwn_status, cur_item, new_item, cur_process
+            nonlocal dwn_status, cur_item, new_item, cur_process, post_processing, s_downloaded, s_total
 
             # Get status
             status: str = data.get("status")
@@ -341,35 +347,48 @@ class Downloader:
                 downloaded: int = data.get("downloaded_bytes", 0)
                 total: int = data.get("total_bytes") or data.get("total_bytes_estimate", 1)
 
+                dwn_percent: float = round((downloaded / total) * 100, 1)
+
                 # Increment current process when download is finished
-                if status == "finished" and cur_item < len(titles):
+                if status == "finished" and cur_process < len(titles) * 2:
                     cur_process += 1
 
-                    # Converting WEBM to other formats has 2 "finished" status.
-                    if file_format.upper() != "WEBM":
-                        new_item = ceil(cur_process / 2)
+                    # Invert status for post-processing
+                    # Since all downloads also have post-processing, flip between True and False every time
+                    post_processing = not post_processing
 
-                    else:
-                        # WEBM only has 1 "finished" status
-                        new_item = cur_process
+                    # Save downloaded/total when entering post-processing
+                    if post_processing:
+                        s_downloaded = downloaded
+                        s_total = total
+
+                    # Calculate new item value
+                    new_item = ceil(cur_process / 2)
 
                 # Move to next line if the downloaded item is completely finished
                 if new_item > cur_item:
 
                     # Call progress callback and print new line
+                    # Use the saved downloaded/total because download will only move to next item after
+                    # previous item's post-processing has finished
                     if progress_callback:
-                        dwn_status, cur_item = progress_callback(status, downloaded, total, cur_item, len(titles),
-                                                                 title)
-                        print()
+                        dwn_status, cur_item = progress_callback(status, post_processing, s_downloaded, s_total,
+                                                                 dwn_percent, cur_item, len(titles), title)
+                    print()
 
                     cur_item = new_item
 
                 # Call progress callback with no new line since cur_item hasn't changed
+                elif progress_callback and post_processing:
+                    dwn_status, cur_item = progress_callback(status, post_processing, s_downloaded, s_total,
+                                                             dwn_percent, cur_item, len(titles), title)
                 elif progress_callback:
-                    dwn_status, cur_item = progress_callback(status, downloaded, total, cur_item, len(titles), title)
+                    dwn_status, cur_item = progress_callback(status, post_processing, downloaded, total,
+                                                             dwn_percent, cur_item, len(titles), title)
 
-        # Add progress hook
-        ytdlp_options["progress_hooks"] = [progress_hook]
+        # Add progress hook for non-Artwork downloads
+        if dwn_type != 3:
+            ytdlp_options["progress_hooks"] = [progress_hook]
 
         def download_thread():
             with yt.YoutubeDL(ytdlp_options) as ydl:
@@ -404,11 +423,11 @@ class Downloader:
 
             # Convert common names back to height
             # 2K and 4K just use '60' when they're 60 fps
-            if v_quality == "4K":
+            if v_quality == "4K" or v_quality == "4K60":
                 resolution: int = 2160
                 is_60_fps: bool = True if v_quality.endswith("60") else False
 
-            elif v_quality == "2K":
+            elif v_quality == "2K" or v_quality == "2K60":
                 resolution: int = 1440
                 is_60_fps: bool = True if v_quality.endswith("60") else False
 

@@ -324,36 +324,50 @@ class Backend:
 
     # Get data from downloader and execute code based on it
     @staticmethod
-    def download_hook(status: str, downloaded: int, total: int, cur_item: int, total_items: int, title: str) -> [int,
-                                                                                                                 int]:
+    def download_callback(status: str, post_processing: bool, downloaded: int, total: int, dwn_percent: float,
+                          cur_item: int, total_items: int, title: str) -> [int, int]:
         """
-        Get progress from downloader
+        Get progress from progress_hook from yt-dlp in downloader
         :param status: Download status from the progress_hook
+        :param post_processing: Boolean if post-processing
         :param downloaded: Downloaded bytes
         :param total: Total bytes in download
+        :param dwn_percent: Download percentage
         :param cur_item: Current item
         :param total_items: Total items
         :param title: Title of item
         """
 
-        Menu.Download.download_status(cur_item=cur_item, total_items=total_items, downloaded=downloaded,
-                                      total=total, status=status, title=title)
-        stdout.flush()
+        # Determine status int
+        if status == "downloading" and post_processing:
+            # Post-processing
+            n_status: int = 2
 
-        if status == "downloading":
-            return 0, cur_item
+        elif status == "downloading":
+            # Downloading
+            n_status: int = 1
 
         elif status == "finished":
-            return 1, cur_item
-
-        elif status == "error":
-            return -1, cur_item
+            # Finished
+            n_status: int = 0
 
         else:
-            return 0, cur_item
+            # Error
+            n_status: int = -1
 
-    # Construct download paths
+        Menu.Download.download_status(cur_item=cur_item, total_items=total_items, downloaded=downloaded,
+                                      total=total, dwn_percent=dwn_percent, status=n_status, title=title)
+        stdout.flush()
+
+        return n_status, cur_item
+
     def construct_paths(self, cur_item: int, titles: list[str], uploaders: list[str]):
+        """
+        Construct download paths for non-Artwork downloads
+        :param cur_item: Current item
+        :param titles: List of video titles
+        :param uploaders: List of uploaders
+        """
 
         # Set index
         i: int = cur_item - 1
@@ -367,17 +381,44 @@ class Backend:
                 # (title).(ext)
                 self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
 
-        else:
-            # yt-dlp downloads thumbnails as webp
-            self.download_path = f"{self.download_dir}{titles[i]}.webp"
+    def convert_images(self, titles: list[str]):
+        """
+        Custom version of construct_paths for Artwork only
+        :param titles: List of video titles
+        """
 
-        # If item is a thumbnail, convert to specific format
-        if self.dwn_type == 3:
-            Image(filename=self.download_path).convert(self.file_ext).save(
-                filename=f"{self.download_dir}{titles[i]}.{self.file_ext}")
+        for i in range(len(titles)):
+            # Artwork only uses title filename format
+
+            # If item is a thumbnail, convert to specific format
+            if self.item_count == 1:
+                # Single Artwork
+                self.download_path = f"{self.download_dir}{titles[i]}.webp"
+
+                Image(filename=self.download_path).convert(self.file_ext).save(
+                    filename=f"{self.download_dir}{titles[i]}.{self.file_ext}")
+
+            elif self.item_count == 2:
+                # Playlist Artwork
+                self.download_path = f"{self.download_dir}{self.playlist_name}/{titles[i]}.webp"
+
+                Image(filename=self.download_path).convert(self.file_ext).save(
+                    filename=f"{self.download_dir}{self.playlist_name}/{titles[i]}.{self.file_ext}"
+                )
 
             # Delete original thumbnail
-            Path.unlink(Path(self.download_path))
+            Utilities.delete_from_disk(path=self.download_path)
+
+            # For PNG Downloads, remove any stray JPGs
+            if self.file_ext.upper() == "PNG":
+                if Utilities.exists_on_disk(path=self.download_path.replace(".webp", ".jpg")):
+                    Utilities.delete_from_disk(path=self.download_path.replace(".webp", ".jpg"))
+
+            # Update path
+            self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
+
+            # Display status
+            Menu.Download.download_status_a(cur_item=i + 1, total_items=len(titles), title=self.titles[i])
 
     def download(self):
         """
@@ -432,22 +473,25 @@ class Backend:
             title_format: str = "{0}"
 
         # Download
-        v_file_format: str = Utilities.get_file_format(file_format=self.file_format, dwn_type=self.dwn_type)
-        download_complete, cur_item = Downloader.download(url=self.yt_url, ytdlp_options=self.ytdlp_options,
-                                                          file_format=v_file_format,
-                                                          title_format=title_format,
-                                                          titles=self.titles, uploaders=self.uploaders,
-                                                          progress_callback=Backend.download_hook)
+        dwn_status, cur_item = Downloader.download(url=self.yt_url, ytdlp_options=self.ytdlp_options,
+                                                   dwn_type=self.dwn_type,
+                                                   title_format=title_format,
+                                                   titles=self.titles, uploaders=self.uploaders,
+                                                   progress_callback=Backend.download_callback)
 
-        if download_complete == 1:
-            self.construct_paths(cur_item=cur_item, titles=self.titles_safe, uploaders=self.uploaders_safe)
+        if dwn_status == 0:
+            # Download complete.
 
-            # Download complete
-            # Menu.Download.download_complete()
+            # For non-Artwork downloads, construct download path only for Single Item downloads
+            if self.dwn_type != 3 and self.item_count == 1:
+                self.construct_paths(cur_item=cur_item, titles=self.titles_safe, uploaders=self.uploaders_safe)
 
-        elif download_complete == -1:
+            # For Artwork downloads, construct download path for all items
+            elif self.dwn_type == 3:
+                self.convert_images(titles=self.titles_safe)
+
+        elif dwn_status == -1:
             # Download failed
-            # Menu.Download.download_failed()
             self.failed_downloads.append(self.titles_safe[cur_item])
 
         # Get download size. Use different path based on download type

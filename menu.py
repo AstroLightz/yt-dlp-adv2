@@ -319,9 +319,12 @@ class Menu:
             print(f"\n{INFO} Chosen Options:"
                   f"\n - Download Type: {colored(f"'{v_dwn_type}'", "cyan")}"
                   f"\n - File Format: {colored(f"'{v_file_format}'", "cyan")}"
-                  f"\n - Mode: {colored(f"'{v_item_count}'", "cyan")}"
-                  f"\n - Filename Format: {colored(f"'{v_filename_format}'", "cyan")}\n")
+                  f"\n - Mode: {colored(f"'{v_item_count}'", "cyan")}", end="")
 
+            # Hide filename format for Artwork
+            print(f"\n - Filename Format: {colored(f"'{v_filename_format}'", "cyan")}" if dwn_type != 3 else "", end="")
+
+            print("\n")
             print(f"{INFO} Proceed with the download?")
 
     class Download:
@@ -347,7 +350,8 @@ class Menu:
                   f"Please be patient as this might take a while...\n")
 
         @staticmethod
-        def download_status(cur_item: int, total_items: int, downloaded: int, total: int, status: str,
+        def download_status(cur_item: int, total_items: int, downloaded: int, total: int, dwn_percent: float,
+                            status: int,
                             title: str) -> None:
             """
             Download status message
@@ -355,7 +359,8 @@ class Menu:
             :param total_items: Total number of items to download
             :param downloaded: Downloaded bytes
             :param total: Total bytes
-            :param status: Status of download, from progress_hook
+            :param dwn_percent: Download percentage
+            :param status: Status integer of download, from progress_hook (0 = Finished, 1 = Downloading, 2 = Post-Process, -1 = Error)
             :param title: Title of the item being downloaded
             """
 
@@ -367,33 +372,33 @@ class Menu:
             print("", end="\x1b[1K\r")
 
             # Set status symbol
-            if status == "downloading":
+            if status == 1:
                 sym_status: str = colored("⧗", "cyan")
-            elif status == "finished":
+            elif status == 0:
                 sym_status: str = colored("✔", "green")
-            elif status == "error":
+            elif status == -1:
                 sym_status: str = colored("✘", "red")
+            elif status == 2:
+                sym_status: str = colored("⧗", "magenta")
             else:
                 sym_status: str = colored("?", "yellow")
 
             print(
                 f"{colored(f"({cur_item}/{total_items})", "yellow")} [{sym_status}] "
                 f"{colored(f"\'{title}\'", "cyan")}: {c_downloaded} / {c_total} "
-                f"{colored(f"({round((downloaded / total) * 100, 1)}%)", "magenta")}", end="")
+                f"{colored(f"({dwn_percent}%)", "magenta")}", end="")
 
         @staticmethod
-        def download_complete() -> None:
+        def download_status_a(cur_item: int, total_items: int, title: str) -> None:
             """
-            Appending string to be used at the end of `Menu.Main.downloading` if the download is successful
+            Download status for Artwork downloads. Since yt-dlp skips download, there is not progress_hook. This is
+            simply a workaround to display the progress. Only display cur/total items, and title
+            :param cur_item: Current item
+            :param total_items: Total items
+            :param title: Title of item
             """
-            print(f"{colored("Completed", "green")}")
-
-        @staticmethod
-        def download_failed() -> None:
-            """
-            Appending string to be used at the end of `Menu.Main.downloading` if the download fails
-            """
-            print(f"{colored("Failed", "red")}")
+            print(f"{colored(f"({cur_item}/{total_items})", "yellow")} [{colored("✔", "green")}] "
+                  f"{colored(f"\'{title}\'", "cyan")}")
 
         @staticmethod
         def all_downloads_complete(completed: int, total: int, path_dir: str, size: str) -> None:

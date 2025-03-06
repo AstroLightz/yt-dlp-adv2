@@ -12,10 +12,10 @@ This project is licensed under the Unlicensed license. You may do whatever you w
 """
 
 from backend import Backend
-from menu import Menu, FAIL
+from menu import Menu
 import sys, getopt
 
-VERSION: str = "1.4.0"
+VERSION: str = "1.5.0"
 COMMITS_LINK: str = "https://github.com/AstroLightz/yt-dlp-adv2/commits/master/"
 
 

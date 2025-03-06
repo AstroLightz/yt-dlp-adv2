@@ -1,8 +1,6 @@
 ### ADD
 - Config file to store options, and allow the user to bring up a menu to change them
-- Filename Format: [item #] - %uploader% - %title%
-    - Download logic must be changed to make this possible. I.E instead of extracting all URLS from a playlist URL,
-    pass the playlist URL and use 'playlist_index'. Requires rework of download status too.
+- Filename Format: [item #] - %uploader% - %title%.%ext%
 
 
 ### FIX
@@ -14,10 +12,4 @@
 - Improve download status. Maybe utilize yt-dlp's custom download status?
 - Improve Action messages (Override them with a complete/fail message when done)
 - For Videos, get video quality before confirmation screen
-
-
-### FEATURE BRANCH
-- Clean up unused/redundant code
-- Change display to make it more clear when yt-dlp is doing post-processing.
-Currently, it replaces the download/total bytes with its post-processing bytes, which leads to confusion with
-download complete size.
+- Improve Download status for Artwork. Show a Download status for total download since individual status is not available
