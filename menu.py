@@ -290,6 +290,8 @@ class Menu:
             print(f"\n{INFO} What format do you want the filenames to be?")
             print(f"  {colored('1', "cyan")}) (uploader) - (title).(ext)")
             print(f"  {colored('2', "cyan")}) (title).(ext)")
+            print(f"  {colored('3', "cyan")}) (item #) - (uploader) - (title).(ext)")
+            print(f"  {colored('4', "cyan")}) (item #) - (title).(ext)")
 
         @staticmethod
         def get_url() -> None:
@@ -299,13 +301,15 @@ class Menu:
             print(f"\n{INFO} Enter the YouTube URL:")
 
         @staticmethod
-        def confirmation_screen(dwn_type: int, file_format: int, item_count: int, filename_format: int) -> None:
+        def confirmation_screen(dwn_type: int, file_format: int, item_count: int, filename_format: int,
+                                video_quality: str or None) -> None:
             """
             Display a confirmation screen with all chosen options
             :param dwn_type: Download type
             :param file_format: File format
             :param item_count: Item count (Single Item/Playlist)
             :param filename_format: Filename format
+            :param video_quality: Video quality
             """
 
             # Get names of download choices
@@ -323,6 +327,9 @@ class Menu:
 
             # Hide filename format for Artwork
             print(f"\n - Filename Format: {colored(f"'{v_filename_format}'", "cyan")}" if dwn_type != 3 else "", end="")
+
+            # Show video quality for Videos
+            print(f"\n - Video Quality: {colored(f"'{video_quality}'", "cyan")}" if video_quality else "", end="")
 
             print("\n")
             print(f"{INFO} Proceed with the download?")

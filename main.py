@@ -15,7 +15,7 @@ from backend import Backend
 from menu import Menu
 import sys, getopt
 
-VERSION: str = "1.5.0"
+VERSION: str = "1.5.1"
 COMMITS_LINK: str = "https://github.com/AstroLightz/yt-dlp-adv2/commits/master/"
 
 

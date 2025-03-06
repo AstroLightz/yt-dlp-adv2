@@ -1,6 +1,6 @@
 ### ADD
 - Config file to store options, and allow the user to bring up a menu to change them
-- Filename Format: [item #] - %uploader% - %title%.%ext%
+- Add filename formats for Playlist Directory names
 
 
 ### FIX
@@ -9,7 +9,5 @@
 
 ### CHANGE
 - Clean up README and add a logo
-- Improve download status. Maybe utilize yt-dlp's custom download status?
 - Improve Action messages (Override them with a complete/fail message when done)
-- For Videos, get video quality before confirmation screen
 - Improve Download status for Artwork. Show a Download status for total download since individual status is not available

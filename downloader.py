@@ -158,6 +158,8 @@ class Downloader:
             "1080p60": "bestvideo[height=1080][fps=60]",
             "2K": "bestvideo[height=1440]",
             "4K": "bestvideo[height=2160]",
+            "2K60": "bestvideo[height=1440][fps=60]",
+            "4K60": "bestvideo[height=2160][fps=60]"
         }
 
         # Setup yt-dlp options
@@ -256,6 +258,15 @@ class Downloader:
             elif filename_format == 2:
                 ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(title)s.%(ext)s"
 
+            # (item #) - (uploader) - (title).(ext)
+            elif filename_format == 3:
+                ytdlp_options[
+                    "outtmpl"] = f"{dwn_dir}{playlist_name}/%(playlist_index)s - %(uploader)s - %(title)s.%(ext)s"
+
+            # (item #) - (title).(ext)
+            elif filename_format == 4:
+                ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(playlist_index)s - %(title)s.%(ext)s"
+
         return ytdlp_options
 
     @staticmethod
@@ -299,15 +310,16 @@ class Downloader:
         return titles, uploaders
 
     @staticmethod
-    def download(url: str, ytdlp_options: dict, dwn_type: int, title_format: str, titles: list[str],
-                 uploaders: list[str],
+    def download(url: str, ytdlp_options: dict, dwn_type: int, item_count: int, filename_format: int,
+                 titles: list[str], uploaders: list[str],
                  progress_callback=None) -> [int, int]:
         """
         Download an item
         :param url: YouTube URL
         :param ytdlp_options: Dictionary of yt-dlp options
         :param dwn_type: Download type
-        :param title_format: Title format using {}s
+        :param item_count: Item count
+        :param filename_format: Filename format
         :param titles: List of titles
         :param uploaders: List of uploaders
         :param progress_callback: Progress callback
@@ -334,13 +346,37 @@ class Downloader:
             status: str = data.get("status")
 
             # Get title
-            if "{1}" in title_format:
-                # Uploader - Title
-                title = title_format.format(uploaders[cur_item - 1], titles[cur_item - 1])
+            title: str = ""
 
-            else:
-                # Title
-                title = title_format.format(titles[cur_item - 1])
+            if item_count == 1:
+                # Single Items
+
+                if filename_format == 1:
+                    # Uploader - Title
+                    title = f"{uploaders[0]} - {titles[0]}"
+
+                elif filename_format == 2:
+                    # Title
+                    title = f"{titles[0]}"
+
+            elif item_count == 2:
+                # Playlist
+
+                if filename_format == 1:
+                    # Uploader - Title
+                    title = f"{uploaders[cur_item - 1]} - {titles[cur_item - 1]}"
+
+                elif filename_format == 2:
+                    # Title
+                    title = f"{titles[cur_item - 1]}"
+
+                elif filename_format == 3:
+                    # Item # - Uploader - Title
+                    title = f"{cur_item} - {uploaders[cur_item - 1]} - {titles[cur_item - 1]}"
+
+                elif filename_format == 4:
+                    # Item # - Title
+                    title = f"{cur_item} - {titles[cur_item - 1]}"
 
             # Get values if downloading
             if status == "downloading" or status == "finished":

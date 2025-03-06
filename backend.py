@@ -80,13 +80,13 @@ class Backend:
         # URL
         self.menu_get_url()
 
-        # Confirmation
-        self.menu_confirmation()
-
         # If download type is Video, ask for video quality. Does not support playlists currently.
         if self.dwn_type == 1 and self.item_count == 1:
             Menu.Video.video_quality_status()
             self.menu_video_quality()
+
+        # Confirmation
+        self.menu_confirmation()
 
         # Download items
         self.download()
@@ -200,14 +200,16 @@ class Backend:
             Menu.Main.filename_format_s()
             Menu.gap(1)
 
-            self.filename_format: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
+            self.filename_format: int = Menu.Input.get_input_num(
+                num_entries=len(Utilities.FILENAME_FORMATS["filename_format_s"]), default_option=1)
 
         elif self.item_count == 2:
             # Playlist
             Menu.Main.filename_format_p()
             Menu.gap(1)
 
-            self.filename_format: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
+            self.filename_format: int = Menu.Input.get_input_num(
+                num_entries=len(Utilities.FILENAME_FORMATS["filename_format_p"]), default_option=1)
 
     ### Get URL ###
 
@@ -218,7 +220,8 @@ class Backend:
 
     def menu_confirmation(self):
         Menu.Main.confirmation_screen(dwn_type=self.dwn_type, file_format=self.file_format,
-                                      item_count=self.item_count, filename_format=self.filename_format)
+                                      item_count=self.item_count, filename_format=self.filename_format,
+                                      video_quality=self.video_quality)
 
         choice: bool = Menu.Input.get_input_bool(default_option=False)
 
@@ -373,13 +376,35 @@ class Backend:
         i: int = cur_item - 1
 
         if self.dwn_type != 3:
-            if self.filename_format == 1:
-                # (uploader) - (title).(ext)
-                self.download_path = f"{self.download_dir}{uploaders[i]} - {titles[i]}.{self.file_ext}"
+            if self.item_count == 1:
+                # Single Item
 
-            elif self.filename_format == 2:
-                # (title).(ext)
-                self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
+                if self.filename_format == 1:
+                    # (uploader) - (title).(ext)
+                    self.download_path = f"{self.download_dir}{uploaders[i]} - {titles[i]}.{self.file_ext}"
+
+                elif self.filename_format == 2:
+                    # (title).(ext)
+                    self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
+
+            elif self.item_count == 2:
+                # Playlist
+
+                if self.filename_format == 1:
+                    # (uploader) - (title).(ext)
+                    self.download_path = f"{self.download_dir}{uploaders[i]} - {titles[i]}.{self.file_ext}"
+
+                elif self.filename_format == 2:
+                    # (title).(ext)
+                    self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
+
+                elif self.filename_format == 3:
+                    # (item #) - (uploader) - (title).(ext)
+                    self.download_path = f"{self.download_dir}{cur_item} - {uploaders[i]} - {titles[i]}.{self.file_ext}"
+
+                elif self.filename_format == 4:
+                    # (item #) - (title).(ext)
+                    self.download_path = f"{self.download_dir}{cur_item} - {titles[i]}.{self.file_ext}"
 
     def convert_images(self, titles: list[str]):
         """
@@ -456,26 +481,11 @@ class Backend:
 
         Menu.Download.starting_download(count=self.num_items)
 
-        # Construct title format
-        title_format: str = ""
-
-        if self.dwn_type != 3:
-            if self.filename_format == 1:
-                # (uploader) - (title)
-                title_format: str = "{0} - {1}"
-
-            elif self.filename_format == 2:
-                # (title)
-                title_format: str = "{0}"
-
-        else:
-            # Artwork uses title
-            title_format: str = "{0}"
-
         # Download
         dwn_status, cur_item = Downloader.download(url=self.yt_url, ytdlp_options=self.ytdlp_options,
                                                    dwn_type=self.dwn_type,
-                                                   title_format=title_format,
+                                                   item_count=self.item_count,
+                                                   filename_format=self.filename_format,
                                                    titles=self.titles, uploaders=self.uploaders,
                                                    progress_callback=Backend.download_callback)
 

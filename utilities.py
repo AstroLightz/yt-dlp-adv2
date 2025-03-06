@@ -56,6 +56,45 @@ class Utilities:
 
     ## CONFIRMATION SCREEN ##
 
+    DOWNLOAD_TYPES: dict[int, str] = {
+        1: "Video",
+        2: "Audio",
+        3: "Artwork"
+    }
+
+    FILE_FORMATS: dict[str, dict[int, str]] = {
+        "file_format_vid": {
+            1: "MP4",
+            2: "MKV",
+            3: "WEBM"
+        },
+        "file_format_aud": {
+            1: "MP3",
+            2: "OGG",
+            3: "WAV",
+            4: "FLAC"
+        },
+        "file_format_art": {
+            1: "PNG",
+            2: "JPG"
+        }
+    }
+
+    FILENAME_FORMATS: dict[str, dict[int, str]] = {
+        "filename_format_s": {
+            1: "(uploader) - (title).(ext)",
+            2: "(title).(ext)"
+        },
+        "filename_format_p": {
+            1: "(uploader) - (title).(ext)",
+            2: "(title).(ext)",
+            3: "(item #) - (uploader) - (title).(ext)",
+            4: "(item #) - (title).(ext)"
+        }
+    }
+
+    UNITS: list[str] = ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]
+
     @staticmethod
     def get_download_type(dwn_type: int) -> str:
         """
@@ -64,13 +103,7 @@ class Utilities:
         :return:
         """
 
-        download_types: dict[int, str] = {
-            1: "Video",
-            2: "Audio",
-            3: "Artwork"
-        }
-
-        return download_types[dwn_type]
+        return Utilities.DOWNLOAD_TYPES[dwn_type]
 
     @staticmethod
     def get_file_format(file_format: int, dwn_type: int) -> str:
@@ -82,30 +115,12 @@ class Utilities:
         """
 
         # Key/values for each option
-        options: dict[str, dict[int, str]] = {
-            "file_format_vid": {
-                1: "MP4",
-                2: "MKV",
-                3: "WEBM"
-            },
-            "file_format_aud": {
-                1: "MP3",
-                2: "OGG",
-                3: "WAV",
-                4: "FLAC"
-            },
-            "file_format_art": {
-                1: "PNG",
-                2: "JPG"
-            }
-        }
-
         if dwn_type == 1:
-            return options["file_format_vid"][file_format]
+            return Utilities.FILE_FORMATS["file_format_vid"][file_format]
         elif dwn_type == 2:
-            return options["file_format_aud"][file_format]
+            return Utilities.FILE_FORMATS["file_format_aud"][file_format]
         else:
-            return options["file_format_art"][file_format]
+            return Utilities.FILE_FORMATS["file_format_art"][file_format]
 
     @staticmethod
     def get_download_mode(item_count: int) -> str:
@@ -126,22 +141,11 @@ class Utilities:
         :return: Filename format
         """
 
-        options: dict[str, dict[int, str]] = {
-            "filename_format_s": {
-                1: "(uploader) - (title).(ext)",
-                2: "(title).(ext)"
-            },
-            "filename_format_p": {
-                1: "(uploader) - (title).(ext)",
-                2: "(title).(ext)"
-            }
-        }
-
         if item_count == 1:
-            return options["filename_format_s"][filename_format]
+            return Utilities.FILENAME_FORMATS["filename_format_s"][filename_format]
 
         else:
-            return options["filename_format_p"][filename_format]
+            return Utilities.FILENAME_FORMATS["filename_format_p"][filename_format]
 
     ## FILE SIZE ##
 
@@ -153,11 +157,10 @@ class Utilities:
         :return: String with converted bytes + unit
         """
 
-        units: list[str] = ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]
         unit_str: str = ""
 
         # Convert bytes to a human-readable string
-        for i, unit in enumerate(units):
+        for i, unit in enumerate(Utilities.UNITS):
             if b < 1024:
                 # Round to 2 decimal places if not bytes
                 unit_str = f"{f"{b:.2f}" if i != 0 else str(b)} {unit}B"
