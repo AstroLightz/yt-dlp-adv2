@@ -232,14 +232,19 @@ class Menu:
         """
 
         @staticmethod
-        def program_header() -> None:
+        def program_header(v: str) -> None:
             """
             Header to be displayed when the script is launched
+            :param v: The version of the script. If provided, it will be displayed
             """
-            print(f"\nWelcome to {colored("YouTube Downloader: Advanced 2.0!", "red")}!\n")
+
+            print(f"\nWelcome to {colored("YouTube Downloader: Advanced 2.0!", "red")}!")
+
+            if v:
+                Menu.Arguments.show_version(v=v)
 
             print(
-                f"{colored('●', "red")} This is a Python program that simplifies the use of the "
+                f"\n{colored('●', "red")} This is a Python program that simplifies the use of the "
                 f"{colored("yt-dlp", "red")} tool ({colored("https://github.com/yt-dlp/yt-dlp", "cyan")}).")
             print(
                 f"{colored('●', "red")} It provides a menu-driven interface to help you "
@@ -521,13 +526,19 @@ class Menu:
                   f"\n{CYAN}-v, --version{RESET}: Show script version.")
 
         @staticmethod
-        def show_version(v: str, g_commits: str) -> None:
+        def show_version(v: str) -> None:
             """
-            Displays script version and GitHub link for commits/updates
-            :param v: Version string
-            :param g_commits: GitHub commits link
+            Displays script version
+            :param v: Version string from main
             """
             print(f"{INFO} Script version: {colored(v, 'cyan')}")
+
+        @staticmethod
+        def show_commits(g_commits: str) -> None:
+            """
+            Displays GitHub link for commits/updates
+            :param g_commits: GitHub commits link
+            """
             print(f"{INFO} GitHub commits: {colored(g_commits, 'cyan')}")
 
     class Problem:

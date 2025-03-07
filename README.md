@@ -116,3 +116,4 @@ the [LICENSE](./LICENSE) file for more information.
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp): Backbone of this whole project
 - [Wand](https://pypi.org/project/Wand/): Thumbnail conversion
 - [termcolor](https://pypi.org/project/termcolor/): Colored output
+- [ruamel.yaml](https://pypi.org/project/ruamel.yaml/): YAML loader/dumper

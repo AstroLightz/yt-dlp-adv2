@@ -4,3 +4,6 @@ workspace.xml
 
 # venv
 .venv
+
+# User config
+config.yml

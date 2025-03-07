@@ -13,10 +13,8 @@ This project is licensed under the Unlicensed license. You may do whatever you w
 
 from backend import Backend
 from menu import Menu
+from utilities import Utilities
 import sys, getopt
-
-VERSION: str = "1.5.1"
-COMMITS_LINK: str = "https://github.com/AstroLightz/yt-dlp-adv2/commits/master/"
 
 
 def handle_args() -> int:
@@ -46,7 +44,8 @@ def handle_args() -> int:
 
             elif arg in ("-v", "--version") and num_args == 1:
                 # Print version
-                Menu.Arguments.show_version(v=VERSION, g_commits=COMMITS_LINK)
+                Menu.Arguments.show_version(v=Utilities.VERSION)
+                Menu.Arguments.show_commits(g_commits=Utilities.COMMITS_LINK)
                 return 1
 
             else:

@@ -1,0 +1,14 @@
+# Display or Hide the program header at the start of the script [true]
+show_header: true
+
+# Show version number in header [true]
+show_version: true
+
+# Download directory for videos [~/Videos/YouTube Downloads]
+video_directory: ~/Videos/YouTube Downloads
+
+# Download directory for audio [~/Music/YouTube Downloads]
+audio_directory: ~/Music/YouTube Downloads
+
+# Download directory for thumbnails [~/Pictures/YouTube Downloads]
+artwork_directory: ~/Pictures/YouTube Downloads

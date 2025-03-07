@@ -1,9 +1,12 @@
 """
 backend.py: The backend of the program
 """
+import os.path
+
 from menu import Menu
 from downloader import Downloader
 from utilities import Utilities
+from confighandler import ConfigHandler
 from sys import stdout
 from wand.image import Image
 from pathlib import Path
@@ -48,7 +51,13 @@ class Backend:
 
         self.ytdlp_options: dict = {}
 
-        Menu.Main.program_header()
+        # Get config file
+        self.CONFIG: dict = ConfigHandler(file="config.yml").get_config()
+
+        # Display program header and version if enabled
+        if self.CONFIG["show_header"]:
+            Menu.Main.program_header(v=Utilities.VERSION if self.CONFIG["show_version"] else None)
+
         Menu.Main.main_menu()
         Menu.gap(1)
 
@@ -56,16 +65,38 @@ class Backend:
         self.dwn_type: int = Menu.Input.get_input_num(num_entries=3, default_option=1)
 
         # File Format
+        # Get download directory from config
         if self.dwn_type == 1:
-            self.download_dir = f"{Path.home()}/Videos/YouTube Downloads/"
+            # Video
+            path: str = os.path.expandvars(os.path.expanduser(self.CONFIG["video_directory"]))
+
+            # Remove trailing slash if it exists
+            if path[-1] == "/":
+                path = path[:-1]
+
+            self.download_dir = f"{Path(path).resolve()}/"
             self.menu_video()
 
         elif self.dwn_type == 2:
-            self.download_dir = f"{Path.home()}/Music/YouTube Downloads/"
+            # Audio
+            path: str = os.path.expandvars(os.path.expanduser(self.CONFIG["audio_directory"]))
+
+            # Remove trailing slash if it exists
+            if path[-1] == "/":
+                path = path[:-1]
+
+            self.download_dir = f"{Path(path).resolve()}/"
             self.menu_audio()
 
         elif self.dwn_type == 3:
-            self.download_dir = f"{Path.home()}/Pictures/YouTube Downloads/"
+            # Artwork
+            path: str = os.path.expandvars(os.path.expanduser(self.CONFIG["artwork_directory"]))
+
+            # Remove trailing slash if it exists
+            if path[-1] == "/":
+                path = path[:-1]
+
+            self.download_dir = f"{Path(path).resolve()}/"
             self.menu_artwork()
 
         # Item Count

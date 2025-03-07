@@ -7,6 +7,9 @@ class Utilities:
     Static class that contains utility functions not necessarily related yt-dlp
     """
 
+    VERSION: str = "1.6.0"
+    COMMITS_LINK: str = "https://github.com/AstroLightz/yt-dlp-adv2/commits/master/"
+
     @staticmethod
     def exists_on_disk(path: str) -> bool:
         """
