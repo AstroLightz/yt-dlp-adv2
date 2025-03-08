@@ -91,12 +91,12 @@ More features to come!
 - Keep changes at minimal (Only change currently is swapping 'Single Item' and 'Playlist' positions and minor wording
   changes)
 
-### Stage 2: Quality of Life Improvements (CURRENT)
+### Stage 2: Quality of Life Improvements (DONE)
 
 - Minor changes to make the program more user-friendly
 - Better documentation, more clear menus, etc.
 
-### Stage 3: Additional Features
+### Stage 3: Additional Features (CURRENT)
 
 - Major changes to make the program more smooth and easy to use
 - Potentially replace number input with Up/Down arrows + Enter navigation

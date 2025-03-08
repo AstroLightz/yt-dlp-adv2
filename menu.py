@@ -1,4 +1,8 @@
+import os.path
+from typing import Any
+
 from termcolor import colored
+
 from utilities import Utilities
 
 # Message types
@@ -17,6 +21,179 @@ class Menu:
     """
     Contains all menus for the program
     """
+
+    class Config:
+        """
+        Contains all menus for the Config Editor
+        """
+
+        @staticmethod
+        def config_header(config_path: str) -> None:
+            """
+            Header for config editor
+            :param config_path: Direct path to the config file
+            """
+            print(f"\n{colored('●', "red")} Welcome to the {colored("Config Editor", "red")}!")
+            print(f"{colored('●', "magenta")} You can edit the script preferences here.")
+            print(f"{colored('●', "yellow")} Config path: {colored(f"\'{config_path}\'", "cyan")}\n\n")
+
+        @staticmethod
+        def config_menu() -> None:
+            """
+            Main menu for config editor
+            """
+            print(f"{INFO} What would you like to do?")
+            print(f"  {colored('1', 'cyan')}) View Config")
+            print(f"  {colored('2', "cyan")}) Edit Config")
+            print(f"  {colored('3', "cyan")}) Reset to Default")
+            print(f"  {colored('4', "cyan")}) Exit")
+
+        @staticmethod
+        def view_config(config: dict, config_path: str) -> None:
+            """
+            Menu for viewing the config
+            :param config: Dictionary with all preferences
+            :param config_path: Direct path to the config file
+            """
+
+            config_name: str = os.path.basename(os.path.normpath(config_path))
+
+            print(f"\n{INFO} Preferences in {colored(f'\'{config_name}\'', "cyan")}:")
+
+            for key, value in config.items():
+                print(f"  - {key}: {colored(value, 'magenta')}")
+
+        @staticmethod
+        def preference_menu(config: dict, changes: dict) -> None:
+            """
+            List all preferences in the config file
+            :param config: Dictionary with all preferences in the config
+            :param changes: Dictionary of all pending changes. Can be empty if no changes
+            """
+
+            print(f"\n{INFO} Which preference do you want to change?")
+
+            # List all preferences
+            for i, (key, value) in enumerate(config.items()):
+
+                # Remove underscores and capitalize first letter
+                t_key = key.replace("_", " ").title()
+
+                print(f"  {colored(str(i + 1), 'cyan')}) {t_key}: {colored(value, "magenta")} ", end="")
+
+                # Print any pending changes
+                if key in changes.keys():
+                    print(colored(f"[{changes[key]}]", "yellow"), end="")
+
+                print()
+
+            print(f"\n  {colored("S", "cyan")}) Save")
+            print(f"  {colored("C", "cyan")}) Cancel")
+
+        @staticmethod
+        def reset_defaults(config: dict, defaults: dict) -> None:
+            """
+            Menu for resetting all preferences to default
+            :param config: Dictionary with all preferences in the config
+            :param defaults: Dictionary with all default preferences
+            """
+
+            print()
+
+            # Print all preferences and their defaults
+            for i, (key, value) in enumerate(config.items()):
+                t_key = key.replace("_", " ").title()
+                print(f"  {colored(str(i + 1), "cyan")}) {t_key}: {colored(value, "magenta")} ", end="")
+
+                # Display default value if config value was changed
+                if key in defaults.keys() and value != defaults[key]:
+                    print(f"--> {colored(defaults[key], "yellow")}", end="")
+
+                print()
+
+            print(f"\n{WARN} Are you sure you want to reset all preferences to default?")
+
+        @staticmethod
+        def unsaved_changes() -> None:
+            """
+            Message to display when trying to exit with unsaved changes
+            """
+            print(f"\n{WARN} There are unsaved changes. Are you sure you want to cancel?")
+
+        @staticmethod
+        def preference_change(p_key: str, p_value: str, p_type: str) -> None:
+            """
+            Menu for changing a preference
+            :param p_key: Name of the preference
+            :param p_value: Current value of the preference
+            :param p_type: Type for the preference
+            """
+            print(f"\n{ACTION} Enter a new value for {colored(p_key, "magenta")}:")
+            print(f"  Current Value: {colored(p_value, "cyan")}")
+            print(f"  Type: {colored(p_type.__name__, "cyan")}")
+
+        @staticmethod
+        def preferences_saved(config_path: str) -> None:
+            """
+            Message to display when preferences are saved
+            :param config_path: Direct path to the config file
+            """
+            config_name: str = os.path.basename(os.path.normpath(config_path))
+
+            print(f"\n{SUCCESS} Preferences saved to {colored(f"\'{config_name}\'", "cyan")}")
+
+        @staticmethod
+        def changes_cancelled() -> None:
+            """
+            Message to display when changes are cancelled
+            """
+            print(f"\n{ACTION} Changes cancelled.")
+
+        @staticmethod
+        def preferences_reset() -> None:
+            """
+            Message to display when preferences are reset
+            """
+            print(f"\n{ACTION} All preferences have been reset to default.")
+
+        @staticmethod
+        def reset_cancelled() -> None:
+            """
+            Message to display when reset is cancelled
+            """
+            print(f"\n{ACTION} Reset cancelled.")
+
+    class Arguments:
+        """
+        Contains all menus for arguments passed to the script
+        """
+
+        @staticmethod
+        def help_menu() -> None:
+            """
+            Displays help menu
+            """
+            print(f"{INFO} Usage: yt-dlp-adv2 {colored("[options]", "cyan")}"
+                  f"\n\nOptions:"
+                  f"\n{colored("-h, --help", "cyan")}: Show this help message."
+                  f"\n{colored("-v, --version", "cyan")}: Show script version."
+                  f"\n{colored("-c, --config", "cyan")}: Open the Config Editor.")
+
+        @staticmethod
+        def show_version(v: str) -> None:
+            """
+            Displays script version
+            :param v: Version string from main
+            """
+            print(f"{INFO} Script version: {colored(v, 'cyan')}")
+
+        @staticmethod
+        def show_commits(g_commits: str) -> None:
+            """
+            Displays GitHub link for commits/updates
+            :param g_commits: GitHub commits link
+            """
+            print(f"{INFO} GitHub commits: {colored(g_commits, 'cyan')}")
 
     class Misc:
         """
@@ -43,11 +220,116 @@ class Menu:
         """
 
         @staticmethod
-        def get_input_num(num_entries: int = 3, default_option: int = 1) -> int:
+        def get_input_pref_value(p_value: Any) -> Any:
+            """
+            Special Input for the config editor. Get the new value for a preference
+            :param p_value: Current value of the preference
+            :return: Returns a value for the selected preference
+            """
+
+            # Get type of current preference
+            pv_type = type(p_value)
+
+            while True:
+                new_value = input(f"> {CYAN}")
+
+                # Reset ANSI codes
+                print(RESET, end="")
+
+                try:
+                    # Try to convert the input to the same type as the preference
+                    if pv_type is int:
+                        new_value = int(new_value)
+
+                    elif pv_type is float:
+                        new_value = float(new_value)
+
+                    elif pv_type is bool:
+
+                        # Allow case-insensitive input
+                        if new_value.lower() in ["true", "false"]:
+                            new_value = (new_value.lower() == "true")
+
+                        else:
+                            raise ValueError
+
+                    elif pv_type is str:
+                        new_value = str(new_value)
+
+                    else:
+                        # If the type is not supported, display error
+                        print(f"{FAIL} Unsupported Type: {colored(pv_type.__name__, 'red')}")
+                        continue
+
+                    # Display error if new value is same as current value
+                    if new_value == p_value:
+                        print(f"\n{FAIL} {colored("New value cannot be the same as the current value.", "red")}")
+
+                    else:
+                        return new_value
+
+                except ValueError:
+                    print(f"\n{FAIL} Invalid Input: {colored(new_value, "cyan")}")
+                    print(f"  Expected Type: {colored(pv_type.__name__, "cyan")}\n")
+
+        @staticmethod
+        def get_input_pref(num_entries: int) -> int:
+            """
+            Get the preference from the user
+            :param num_entries: Number of entries in the menu
+            :return: Preference choice
+            """
+
+            # Create options list string
+            options_list: str = "["
+
+            for i in range(num_entries):
+                if i != num_entries - 1:
+                    options_list += f"{i + 1}/"
+                else:
+                    options_list += f"{i + 1}"
+
+            # Add save and cancel
+            options_list += "/S/C"
+
+            options_list += "]"
+
+            while True:
+                try:
+                    choice = input(f"> {colored(options_list, "magenta")}: ")
+
+                    # If choice is not save or cancel
+                    if choice.upper() != "S" and choice.upper() != "C":
+                        choice = int(choice)
+
+                        if choice < 1 or choice > num_entries:
+                            raise ValueError
+
+                        return choice
+
+                    elif choice.upper() == "S":
+                        # Save and exit
+                        return -1
+
+                    elif choice.upper() == "C":
+                        # Cancel
+                        return -2
+
+                    else:
+                        raise ValueError
+
+                except ValueError:
+                    print(
+                        f"\n{FAIL} {colored(f"Invalid input. Please enter a value "
+                                            f"between 1 and {num_entries}, or S for Save or C for Cancel.", "red")}")
+
+        @staticmethod
+        def get_input_num(num_entries: int = 3, default_option: int = 1, no_default: bool = False) -> int:
             """
             Gets a numeric input from the user. If num_entries is greater than 8, use `Menu.Input.get_input_long()` instead.
             :param default_option: The default option to select
             :param num_entries: Number of entries in the menu. Must be at least 2
+            :param no_default: If True, will require the user to select an option
             :return: The selected option
             """
 
@@ -64,9 +346,14 @@ class Menu:
 
             while True:
                 try:
-                    choice: int = int(
-                        input(
-                            f"> {colored(options_list, "magenta")} {colored(f"({default_option})", "cyan")}: ") or default_option)
+                    if no_default:
+                        choice: int = int(
+                            input(f"> {colored(options_list, "magenta")}: "))
+
+                    else:
+                        choice: int = int(
+                            input(
+                                f"> {colored(options_list, "magenta")} {colored(f"({default_option})", "cyan")}: ") or default_option)
 
                     if choice < 1 or choice > num_entries:
                         raise ValueError
@@ -238,7 +525,7 @@ class Menu:
             :param v: The version of the script. If provided, it will be displayed
             """
 
-            print(f"\nWelcome to {colored("YouTube Downloader: Advanced 2.0!", "red")}!")
+            print(f"\nWelcome to {colored("YouTube Downloader: Advanced 2.0", "red")}!")
 
             if v:
                 Menu.Arguments.show_version(v=v)
@@ -509,37 +796,6 @@ class Menu:
             print(f"\n{INFO} What file format do you want to use?")
             print(f"  {colored('1', "cyan")}) PNG")
             print(f"  {colored('2', "cyan")}) JPG")
-
-    class Arguments:
-        """
-        Contains all menus for arguments passed to the script
-        """
-
-        @staticmethod
-        def help_menu() -> None:
-            """
-            Displays help menu
-            """
-            print(f"{INFO} Usage: yt-dlp-adv2 {CYAN}[options]{RESET}"
-                  f"\n\nOptions:"
-                  f"\n{CYAN}-h, --help{RESET}: Show this help message."
-                  f"\n{CYAN}-v, --version{RESET}: Show script version.")
-
-        @staticmethod
-        def show_version(v: str) -> None:
-            """
-            Displays script version
-            :param v: Version string from main
-            """
-            print(f"{INFO} Script version: {colored(v, 'cyan')}")
-
-        @staticmethod
-        def show_commits(g_commits: str) -> None:
-            """
-            Displays GitHub link for commits/updates
-            :param g_commits: GitHub commits link
-            """
-            print(f"{INFO} GitHub commits: {colored(g_commits, 'cyan')}")
 
     class Problem:
         """

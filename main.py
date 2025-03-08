@@ -11,10 +11,13 @@ main.py is the main entry point for the program
 This project is licensed under the Unlicensed license. You may do whatever you want with it.
 """
 
+import getopt
+import sys
+
 from backend import Backend
+from confighandler import ConfigEditor
 from menu import Menu
 from utilities import Utilities
-import sys, getopt
 
 
 def handle_args() -> int:
@@ -24,8 +27,8 @@ def handle_args() -> int:
     """
 
     # h - help, v - version
-    options: str = "hv"
-    long_options: list[str] = ["help", "version"]
+    options: str = "hvc"
+    long_options: list[str] = ["help", "version", "config"]
 
     # Get command line arguments
     cmd_args: list = sys.argv[1:]
@@ -46,6 +49,11 @@ def handle_args() -> int:
                 # Print version
                 Menu.Arguments.show_version(v=Utilities.VERSION)
                 Menu.Arguments.show_commits(g_commits=Utilities.COMMITS_LINK)
+                return 1
+
+            elif arg in ("-c", "--config") and num_args == 1:
+                # Open the Config Editor
+                ConfigEditor()
                 return 1
 
             else:

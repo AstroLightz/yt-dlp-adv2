@@ -1,5 +1,4 @@
 ### ADD
-- Config file to store options, and allow the user to bring up a menu to change them
 - Add filename formats for Playlist Directory names
 
 
@@ -11,7 +10,3 @@
 - Clean up README and add a logo
 - Improve Action messages (Override them with a complete/fail message when done)
 - Improve Download status for Artwork. Show a Download status for total download since individual status is not available
-
-
-### BRANCH
-- Add menu for changing config file

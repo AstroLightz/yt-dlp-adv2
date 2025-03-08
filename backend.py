@@ -2,14 +2,15 @@
 backend.py: The backend of the program
 """
 import os.path
-
-from menu import Menu
-from downloader import Downloader
-from utilities import Utilities
-from confighandler import ConfigHandler
-from sys import stdout
-from wand.image import Image
 from pathlib import Path
+from sys import stdout
+
+from wand.image import Image
+
+from confighandler import ConfigHandler
+from downloader import Downloader
+from menu import Menu
+from utilities import Utilities
 
 
 class Backend:
