@@ -53,7 +53,9 @@ def handle_args() -> int:
 
             elif arg in ("-c", "--config") and num_args == 1:
                 # Open the Config Editor
-                ConfigEditor()
+                if ConfigEditor().launch_downloader:
+                    Backend()
+
                 return 1
 
             else:

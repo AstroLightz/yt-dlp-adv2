@@ -11,6 +11,7 @@ from confighandler import ConfigHandler
 from downloader import Downloader
 from menu import Menu
 from utilities import Utilities
+from videoquality import VideoQuality
 
 
 class Backend:
@@ -159,6 +160,21 @@ class Backend:
             Menu.Problem.Warning.no_video_qualities()
             return
 
+        # If default video quality is set and is available, use it
+        if self.CONFIG["default_video_quality"] and self.CONFIG["default_video_quality"] in self.video_qualities:
+            self.video_quality = self.CONFIG["default_video_quality"]
+
+            Menu.Video.default_quality(quality=self.CONFIG["default_video_quality"])
+            return
+
+        elif self.CONFIG["default_video_quality"]:
+            # If default video quality is set but not available, display message
+            self.video_quality = VideoQuality.next_best_quality(v_quality=self.CONFIG["default_video_quality"], available=self.video_qualities)
+
+            Menu.Problem.Warning.default_quality_unavailable(quality=self.CONFIG["default_video_quality"], next_quality=self.video_quality)
+            return
+
+        Menu.Problem.Success.video_qualities_found(num_qualities=len(self.video_qualities))
         Menu.Video.video_quality(qualities=self.video_qualities)
         Menu.gap(1)
 

@@ -1,7 +1,10 @@
-import yt_dlp as yt
-from threading import Thread
-from pathlib import Path
 from math import ceil
+from pathlib import Path
+from threading import Thread
+
+import yt_dlp as yt
+
+from videoquality import VideoQuality
 
 
 class Downloader:
@@ -450,46 +453,6 @@ class Downloader:
         :return: list of all available video qualities, sorted from highest to lowest
         """
 
-        def get_sort_key(v_quality: str) -> tuple[int, bool]:
-            """
-            Get the key for sorting the qualities
-            :param v_quality: Video quality
-            :return: Tuple of (resolution, is_60_fps), where is_60_fps is True if video is 60 fps
-            """
-
-            # Convert common names back to height
-            # 2K and 4K just use '60' when they're 60 fps
-            if v_quality == "4K" or v_quality == "4K60":
-                resolution: int = 2160
-                is_60_fps: bool = True if v_quality.endswith("60") else False
-
-            elif v_quality == "2K" or v_quality == "2K60":
-                resolution: int = 1440
-                is_60_fps: bool = True if v_quality.endswith("60") else False
-
-            # Try to get base resolution (The number before the 'p')
-            elif v_quality.endswith("p60"):
-                is_60_fps: bool = True
-
-                try:
-                    resolution: int = int(v_quality[:-3])
-                except ValueError:
-                    resolution: int = 0
-
-            elif v_quality.endswith("p"):
-                is_60_fps: bool = False
-
-                try:
-                    resolution: int = int(v_quality[:-1])
-                except ValueError:
-                    resolution: int = 0
-
-            else:
-                resolution: int = 0
-                is_60_fps: bool = False
-
-            return resolution, is_60_fps
-
         qualities: set[str] = set()
         yt_args = {
             "noplaylist": True,
@@ -511,18 +474,14 @@ class Downloader:
                         continue
 
                     # Ensure only valid video qualities are added
-                    if height in [144, 240, 360, 480]:
+                    if height in VideoQuality.resolutions_30:
                         quality: str = f"{height}p"
 
                     elif height == 720:
                         quality: str = f"{height}p60" if fps == 60 else f"{height}p"
 
                     elif height == 1080:
-                        # 1080p must be 60fps to be valid
-                        if fps != 60:
-                            continue
-
-                        quality: str = f"{height}p60"
+                        quality: str = f"{height}p60" if fps == 60 else f"{height}p"
 
                     # Shorten 1440p and above to their common names
                     elif height == 1440:
@@ -536,7 +495,7 @@ class Downloader:
 
                     qualities.add(quality)
 
-                return sorted(qualities, key=get_sort_key, reverse=True)
+                return sorted(qualities, key=VideoQuality.resolution_sort_key, reverse=True)
 
             except Exception as e:
                 print(f"Error: {e}")

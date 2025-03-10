@@ -127,6 +127,8 @@ class ConfigEditor:
     def __init__(self):
         self.ch: ConfigHandler = ConfigHandler(file="config.yml")
 
+        self.launch_downloader: bool = False
+
         # Config
         self.cur_prefs: dict = self.ch.get_config()
         self.new_prefs: dict = {}
@@ -147,19 +149,28 @@ class ConfigEditor:
         while True:
             self.main_menu()
 
-            if self.menu_choice == 1:
+            if self.menu_choice == '1':
                 # View Config
                 self.view_config()
 
-            elif self.menu_choice == 2:
+            elif self.menu_choice == '2':
                 # Edit Config
                 self.edit_config()
 
-            elif self.menu_choice == 3:
+            elif self.menu_choice == '3':
                 # Reset Config
                 self.reset_config()
 
-            elif self.menu_choice == 4:
+            elif self.menu_choice == '4':
+                # View Config Path
+                Menu.Config.view_config_path(path=self.ch.config_path)
+
+            elif self.menu_choice == 'S':
+                # Run the Downloader
+                self.launch_downloader = True
+                return
+
+            elif self.menu_choice == 'Q':
                 # Exit
                 Menu.Misc.exit_script()
                 exit(0)
@@ -170,7 +181,8 @@ class ConfigEditor:
         Menu.gap(1)
 
         # Get main menu choice
-        self.menu_choice: int = Menu.Input.get_input_num(num_entries=4, default_option=1)
+        # self.menu_choice: int = Menu.Input.get_input_num(num_entries=4, default_option=1)
+        self.menu_choice: str = Menu.Input.get_input_custom(opt_range=[1, 2, 3, 4, 'S', 'Q'], default_option=1)
 
     def view_config(self):
         Menu.Config.view_config(config=self.cur_prefs, config_path=self.ch.config_path)
@@ -194,7 +206,7 @@ class ConfigEditor:
                 Menu.gap(1)
 
                 # Get new value
-                self.p_new_value = Menu.Input.get_input_pref_value(p_value=pref_val)
+                self.p_new_value = Menu.Input.get_input_pref_value(p_key=pref_key, p_value=pref_val)
 
                 # Add to changes dict
                 self.new_prefs[pref_key] = self.p_new_value
@@ -235,6 +247,12 @@ class ConfigEditor:
 
     def reset_config(self):
         # Requires confirmation
+
+        if self.cur_prefs == self.ch.default_vals:
+            # User config is already default
+            Menu.Problem.Error.pref_already_default()
+            return
+
         Menu.Config.reset_defaults(config=self.cur_prefs, defaults=self.ch.default_vals)
 
         # Get confirmation

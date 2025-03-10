@@ -55,10 +55,11 @@ python3 main.py
     - e.g. (uploader) - (title).(ext)
 
 
-- Dynamic directory location for each type of download
-    - Music: ~/Music
-    - Videos: ~/Videos
-    - Artwork: ~/Pictures
+- Dynamic directory location for each type of download<sup>2</sup>
+    - Music: ~/Music/YouTube Downloads
+    - Videos: ~/Videos/YouTube Downloads
+    - Artwork: ~/Pictures/YouTube Downloads
+
 
 - Custom download status messages
 - See overview of download after download is complete
@@ -105,6 +106,9 @@ More info on development can be found in the [TODO](./TODO) file.
 
 <sup>1</sup> Failed downloads not tested yet. If you find a video or playlist that always fails, and you spot a bug with
 the output/program, create an Issue and include the YT link.
+
+<sup>2</sup> These preferences can be customized in the config.yml file in the program directory or through the Config Editor
+menu, included in the script by passing `-c` or `--config` to the script.
 
 ## License:
 

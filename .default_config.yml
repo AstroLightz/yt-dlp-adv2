@@ -12,3 +12,6 @@ audio_directory: ~/Music/YouTube Downloads
 
 # Download directory for thumbnails [~/Pictures/YouTube Downloads]
 artwork_directory: ~/Pictures/YouTube Downloads
+
+# Default video quality for Video downloads ['']
+default_video_quality: ''

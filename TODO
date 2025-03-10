@@ -1,5 +1,10 @@
 ### ADD
+- Add flag to bypass default video quality
 - Add filename formats for Playlist Directory names
+- Overhaul filename format by allowing users to create their own formats through pre-defined options
+    - Allow making their own filename formats default by saving to the config
+    - Possibly make this an option for Playlist Directory names
+    - Would be a menu-driven process, similar to the Config Editor
 
 
 ### FIX
@@ -8,5 +13,4 @@
 
 ### CHANGE
 - Clean up README and add a logo
-- Improve Action messages (Override them with a complete/fail message when done)
 - Improve Download status for Artwork. Show a Download status for total download since individual status is not available

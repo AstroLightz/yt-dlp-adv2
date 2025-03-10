@@ -4,6 +4,7 @@ from typing import Any
 from termcolor import colored
 
 from utilities import Utilities
+from videoquality import VideoQuality
 
 # Message types
 SUCCESS: str = f"{colored('✔', "green")}"
@@ -46,7 +47,18 @@ class Menu:
             print(f"  {colored('1', 'cyan')}) View Config")
             print(f"  {colored('2', "cyan")}) Edit Config")
             print(f"  {colored('3', "cyan")}) Reset to Default")
-            print(f"  {colored('4', "cyan")}) Exit")
+            print(f"  {colored('4', "cyan")}) View Config Path")
+
+            print(f"\n  {colored('S', "cyan")}) Launch Downloader")
+            print(f"  {colored('Q', "cyan")}) Exit")
+
+        @staticmethod
+        def view_config_path(path: str) -> None:
+            """
+            Menu for viewing the config path
+            :param path: Direct path to the config file
+            """
+            print(f"\n{INFO} Config path: {colored(f'\'{path}\'', 'cyan')}")
 
         @staticmethod
         def view_config(config: dict, config_path: str) -> None:
@@ -61,7 +73,10 @@ class Menu:
             print(f"\n{INFO} Preferences in {colored(f'\'{config_name}\'', "cyan")}:")
 
             for key, value in config.items():
-                print(f"  - {key}: {colored(value, 'magenta')}")
+                # Remove underscores and capitalize first letter
+                t_key = key.replace("_", " ").title()
+
+                print(f"  - {t_key}: {colored(Utilities.pref_display_value(p_value=value), 'magenta')}")
 
         @staticmethod
         def preference_menu(config: dict, changes: dict) -> None:
@@ -79,11 +94,13 @@ class Menu:
                 # Remove underscores and capitalize first letter
                 t_key = key.replace("_", " ").title()
 
-                print(f"  {colored(str(i + 1), 'cyan')}) {t_key}: {colored(value, "magenta")} ", end="")
+                print(
+                    f"  {colored(str(i + 1), 'cyan')}) {t_key}: {colored(Utilities.pref_display_value(p_value=value), "magenta")} ",
+                    end="")
 
                 # Print any pending changes
                 if key in changes.keys():
-                    print(colored(f"[{changes[key]}]", "yellow"), end="")
+                    print(colored(f"[{"None" if not changes[key] else changes[key]}]", "yellow"), end="")
 
                 print()
 
@@ -103,22 +120,25 @@ class Menu:
             # Print all preferences and their defaults
             for i, (key, value) in enumerate(config.items()):
                 t_key = key.replace("_", " ").title()
-                print(f"  {colored(str(i + 1), "cyan")}) {t_key}: {colored(value, "magenta")} ", end="")
+                print(
+                    f"  {colored(str(i + 1), "cyan")}) {t_key}: {colored(Utilities.pref_display_value(p_value=value), "magenta")} ",
+                    end="")
 
                 # Display default value if config value was changed
                 if key in defaults.keys() and value != defaults[key]:
-                    print(f"--> {colored(defaults[key], "yellow")}", end="")
+                    print(f"--> {colored("None" if not defaults[key] else
+                                         Utilities.pref_display_value(p_value=defaults[key]), "yellow")}", end="")
 
                 print()
 
-            print(f"\n{WARN} Are you sure you want to reset all preferences to default?")
+            print(f"\n{WARN} {colored("Are you sure you want to reset all preferences to default?", "yellow")}")
 
         @staticmethod
         def unsaved_changes() -> None:
             """
             Message to display when trying to exit with unsaved changes
             """
-            print(f"\n{WARN} There are unsaved changes. Are you sure you want to cancel?")
+            print(f"\n{WARN} {colored("There are unsaved changes. Are you sure you want to cancel?", "yellow")}")
 
         @staticmethod
         def preference_change(p_key: str, p_value: str, p_type: str) -> None:
@@ -128,9 +148,19 @@ class Menu:
             :param p_value: Current value of the preference
             :param p_type: Type for the preference
             """
-            print(f"\n{ACTION} Enter a new value for {colored(p_key, "magenta")}:")
-            print(f"  Current Value: {colored(p_value, "cyan")}")
-            print(f"  Type: {colored(p_type.__name__, "cyan")}")
+
+            # Remove underscores and capitalize first letter
+            t_key = p_key.replace("_", " ").title()
+
+            print(f"\n{ACTION} Enter a new value for {colored(t_key, "magenta")}:")
+            print(f"  Current Value: {colored(Utilities.pref_display_value(p_value=p_value), "cyan")}")
+
+            # Handle custom types
+            if p_key == "default_video_quality":
+                print(f"  Valid Video Qualities: {colored(', '.join(list(VideoQuality.resolutions.values())), 'cyan')}")
+
+            else:
+                print(f"  Type: {colored(p_type.__name__, "cyan")}")
 
         @staticmethod
         def preferences_saved(config_path: str) -> None:
@@ -220,9 +250,56 @@ class Menu:
         """
 
         @staticmethod
-        def get_input_pref_value(p_value: Any) -> Any:
+        def get_input_custom(opt_range: list[int | str], default_option: int | str, no_default: bool = False) -> str:
+            """
+            Custom Input system. Provide the options range and (optionally) the default option
+            :param opt_range: List of integers representing the options. Order in the list will be used in display.
+            :param default_option: Default option
+            :param no_default: If True, no default option
+            :return: The selected option
+            """
+
+            # Create options list string
+            options_list: str = "["
+
+            for opt in opt_range:
+                if opt != opt_range[-1]:
+                    options_list += f"{opt}/"
+                else:
+                    options_list += f"{opt}"
+
+            options_list += "]"
+
+            while True:
+                try:
+                    if no_default:
+                        choice = input(f"> {colored(options_list, "magenta")}: ")
+
+                    else:
+                        choice = input(f"> {colored(options_list, "magenta")} "
+                                       f"{colored(f"({default_option})", "cyan")}: ") or str(default_option)
+
+                    # Handle integers
+                    if choice.isnumeric():
+                        if int(choice) not in [int(opt) if isinstance(opt, str) and opt.isnumeric() else opt for opt in
+                                               opt_range]:
+                            raise ValueError
+
+                    else:
+                        if choice.upper() not in [opt.upper() if isinstance(opt, str) else opt for opt in opt_range]:
+                            raise ValueError
+
+                    return choice.upper() if choice.isalpha() else choice
+
+                except ValueError:
+                    print(
+                        f"\n{FAIL} {colored(f"Invalid input. Please enter an integer from the following selection: {opt_range}", "red")}")
+
+        @staticmethod
+        def get_input_pref_value(p_key: str, p_value: Any) -> Any:
             """
             Special Input for the config editor. Get the new value for a preference
+            :param p_key: Key of the preference. Used for overriding certain value types
             :param p_value: Current value of the preference
             :return: Returns a value for the selected preference
             """
@@ -238,7 +315,24 @@ class Menu:
 
                 try:
                     # Try to convert the input to the same type as the preference
-                    if pv_type is int:
+                    if p_key == "default_video_quality":
+                        # For Video Quality, ensure input is a valid resolution
+
+                        try:
+                            if new_value:
+                                new_value = VideoQuality(value=new_value).quality
+
+                            else:
+                                # ALlow setting default to null
+                                new_value = ""
+
+                        except VideoQuality.InvalidQuality:
+                            print(f"\n{FAIL} Invalid Video Quality: {colored(new_value, 'cyan')}")
+                            print(
+                                f"  Valid Video Qualities: {colored(', '.join(list(VideoQuality.resolutions.values())), 'cyan')}\n")
+                            continue
+
+                    elif pv_type is int:
                         new_value = int(new_value)
 
                     elif pv_type is float:
@@ -755,7 +849,7 @@ class Menu:
             """
             Status message to display while gathering video qualities from URL
             """
-            print(f"\n{ACTION} Gathering video qualities. Please wait...")
+            print(f"\n{ACTION} Gathering video qualities. Please wait...", end="")
 
         @staticmethod
         def video_quality(qualities: list[str]) -> None:
@@ -766,6 +860,15 @@ class Menu:
 
             for i, quality in enumerate(qualities):
                 print(f"  {colored(str(i + 1), 'cyan')}) {quality}")
+
+        @staticmethod
+        def default_quality(quality: str) -> None:
+            """
+            Message to display when using default quality
+            :param quality: Quality
+            """
+            print("", end="\x1b[1K\r")
+            print(f"{INFO} Using default quality: {colored(quality, 'cyan')}")
 
     class Audio:
         """
@@ -839,6 +942,16 @@ class Menu:
                 print(f"\n{SUCCESS} Mode changed successfully from {colored("Single Item", "red")} "
                       f"to {colored("Playlist", "green")}. Continuing with download...")
 
+            @staticmethod
+            def video_qualities_found(num_qualities: int) -> None:
+                """
+                Message to display when video qualities are found
+                :param num_qualities: Number of video qualities found
+                """
+                print("", end="\x1b[1K\r")
+                print(
+                    f"{SUCCESS} Found {colored(num_qualities, "cyan")} available video qualit{"ies" if num_qualities > 1 else "y"}.")
+
         class Warning:
             """
             Any problems that don't immediately cause an error, but require attention
@@ -882,7 +995,19 @@ class Menu:
                 """
                 Message to display when no video qualities are found
                 """
-                print(f"\n{WARN} No video qualities found. Downloading with default quality.")
+                print("", end="\x1b[1K\r")
+                print(f"{WARN} {colored("No available video qualities found. Using best quality.", "yellow")}")
+
+            @staticmethod
+            def default_quality_unavailable(quality: str, next_quality: str) -> None:
+                """
+                Warning to display when the default quality is unavailable
+                :param quality: Quality
+                :param next_quality: Next available quality
+                """
+                print("", end="\x1b[1K\r")
+                print(
+                    f"{WARN} {colored(f"Default quality {quality} is not available. Using next best quality: {next_quality}", "yellow")}")
 
         class Error:
             """
@@ -921,3 +1046,10 @@ class Menu:
                     f"\n{FAIL} Cannot download items due to incorrect mode selected. Please choose the right mode for the provided URL.")
                 print(f"- Chosen Mode: {colored("Single Item", "red")}")
                 print(f"- Correct Mode: {colored("Playlist", "green")}")
+
+            @staticmethod
+            def pref_already_default() -> None:
+                """
+                Error when all preferences are already set to default
+                """
+                print(f"\n{FAIL} {colored("Preferences are already set to default.", "red")}")
