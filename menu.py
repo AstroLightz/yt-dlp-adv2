@@ -1,17 +1,17 @@
 import os.path
 from typing import Any
 
-from termcolor import colored
+from termcolor import colored as col
 
 from utilities import Utilities
 from videoquality import VideoQuality
 
 # Message types
-SUCCESS: str = f"{colored('✔', "green")}"
-FAIL: str = f"{colored('✘', "red")}"
-INFO: str = f"{colored('?', "yellow")}"
-WARN: str = f"{colored('⚠️', "yellow")}"
-ACTION: str = f"{colored('➜', "blue")}"
+SUCCESS: str = f"{col('✔', "green")}"
+FAIL: str = f"{col('✘', "red")}"
+INFO: str = f"{col('?', "yellow")}"
+WARN: str = f"{col('⚠️', "yellow")}"
+ACTION: str = f"{col('➜', "blue")}"
 
 # ANSI Codes for input
 CYAN: str = "\033[36m"
@@ -34,9 +34,9 @@ class Menu:
             Header for config editor
             :param config_path: Direct path to the config file
             """
-            print(f"\n{colored('●', "red")} Welcome to the {colored("Config Editor", "red")}!")
-            print(f"{colored('●', "magenta")} You can edit the script preferences here.")
-            print(f"{colored('●', "yellow")} Config path: {colored(f"\'{config_path}\'", "cyan")}\n\n")
+            print(f"\n{col('●', "red")} Welcome to the {col("Config Editor", "red")}!")
+            print(f"{col('●', "magenta")} You can edit the script preferences here.")
+            print(f"{col('●', "yellow")} Config path: {col(f"\'{config_path}\'", "cyan")}")
 
         @staticmethod
         def config_menu() -> None:
@@ -44,13 +44,14 @@ class Menu:
             Main menu for config editor
             """
             print(f"{INFO} What would you like to do?")
-            print(f"  {colored('1', 'cyan')}) View Config")
-            print(f"  {colored('2', "cyan")}) Edit Config")
-            print(f"  {colored('3', "cyan")}) Reset to Default")
-            print(f"  {colored('4', "cyan")}) View Config Path")
+            print(f"  {col('1', 'cyan')}) View Config")
+            print(f"  {col('2', "cyan")}) Edit Config")
+            print(f"  {col('3', "cyan")}) Reset to Default")
+            print(f"  {col('4', "cyan")}) View Config Path")
+            print(f"  {col('5', "cyan")}) View Problems")
 
-            print(f"\n  {colored('S', "cyan")}) Launch Downloader")
-            print(f"  {colored('Q', "cyan")}) Exit")
+            print(f"\n  {col('S', "cyan")}) Launch Downloader")
+            print(f"  {col('Q', "cyan")}) Exit")
 
         @staticmethod
         def view_config_path(path: str) -> None:
@@ -58,7 +59,7 @@ class Menu:
             Menu for viewing the config path
             :param path: Direct path to the config file
             """
-            print(f"\n{INFO} Config path: {colored(f'\'{path}\'', 'cyan')}")
+            print(f"\n{INFO} Config path: {col(f'\'{path}\'', 'cyan')}")
 
         @staticmethod
         def view_config(config: dict, config_path: str) -> None:
@@ -70,13 +71,13 @@ class Menu:
 
             config_name: str = os.path.basename(os.path.normpath(config_path))
 
-            print(f"\n{INFO} Preferences in {colored(f'\'{config_name}\'', "cyan")}:")
+            print(f"\n{INFO} Preferences in {col(f'\'{config_name}\'', "cyan")}:")
 
             for key, value in config.items():
                 # Remove underscores and capitalize first letter
                 t_key = key.replace("_", " ").title()
 
-                print(f"  - {t_key}: {colored(Utilities.pref_display_value(p_value=value), 'magenta')}")
+                print(f"  - {t_key}: {col(Utilities.pref_display_value(p_value=value), 'magenta')}")
 
         @staticmethod
         def preference_menu(config: dict, changes: dict) -> None:
@@ -95,17 +96,19 @@ class Menu:
                 t_key = key.replace("_", " ").title()
 
                 print(
-                    f"  {colored(str(i + 1), 'cyan')}) {t_key}: {colored(Utilities.pref_display_value(p_value=value), "magenta")} ",
+                    f"  {col(str(i + 1), 'cyan')}) {t_key}: "
+                    f"{col(Utilities.pref_display_value(p_value=value), "magenta")} ",
                     end="")
 
                 # Print any pending changes
                 if key in changes.keys():
-                    print(colored(f"[{"None" if not changes[key] else changes[key]}]", "yellow"), end="")
+                    print(col(f"[{"None" if not isinstance(changes[key], bool) and \
+                                            not changes[key] else changes[key]}]", "yellow"), end="")
 
                 print()
 
-            print(f"\n  {colored("S", "cyan")}) Save")
-            print(f"  {colored("C", "cyan")}) Cancel")
+            print(f"\n  {col("S", "cyan")}) Save")
+            print(f"  {col("C", "cyan")}) Cancel")
 
         @staticmethod
         def reset_defaults(config: dict, defaults: dict) -> None:
@@ -121,24 +124,25 @@ class Menu:
             for i, (key, value) in enumerate(config.items()):
                 t_key = key.replace("_", " ").title()
                 print(
-                    f"  {colored(str(i + 1), "cyan")}) {t_key}: {colored(Utilities.pref_display_value(p_value=value), "magenta")} ",
+                    f"  {col(str(i + 1), "cyan")}) {t_key}: "
+                    f"{col(Utilities.pref_display_value(p_value=value), "magenta")} ",
                     end="")
 
                 # Display default value if config value was changed
                 if key in defaults.keys() and value != defaults[key]:
-                    print(f"--> {colored("None" if not defaults[key] else
-                                         Utilities.pref_display_value(p_value=defaults[key]), "yellow")}", end="")
+                    print(f"--> {col("None" if not isinstance(defaults[key], bool) and not defaults[key] else
+                                     Utilities.pref_display_value(p_value=defaults[key]), "yellow")}", end="")
 
                 print()
 
-            print(f"\n{WARN} {colored("Are you sure you want to reset all preferences to default?", "yellow")}")
+            print(f"\n{WARN} {col("Are you sure you want to reset all preferences to default?", "yellow")}")
 
         @staticmethod
         def unsaved_changes() -> None:
             """
             Message to display when trying to exit with unsaved changes
             """
-            print(f"\n{WARN} {colored("There are unsaved changes. Are you sure you want to cancel?", "yellow")}")
+            print(f"\n{WARN} {col("There are unsaved changes. Are you sure you want to cancel?", "yellow")}")
 
         @staticmethod
         def preference_change(p_key: str, p_value: str, p_type: str) -> None:
@@ -152,15 +156,16 @@ class Menu:
             # Remove underscores and capitalize first letter
             t_key = p_key.replace("_", " ").title()
 
-            print(f"\n{ACTION} Enter a new value for {colored(t_key, "magenta")}:")
-            print(f"  Current Value: {colored(Utilities.pref_display_value(p_value=p_value), "cyan")}")
+            print(f"\n{ACTION} Enter a new value for {col(t_key, "magenta")}:")
+            print(f"  Current Value: {col(Utilities.pref_display_value(p_value=p_value), "cyan")}")
 
             # Handle custom types
             if p_key == "default_video_quality":
-                print(f"  Valid Video Qualities: {colored(', '.join(list(VideoQuality.resolutions.values())), 'cyan')}")
+                print(f"  Valid Video Qualities: "
+                      f"{col(', '.join(list(VideoQuality.resolutions.values())), 'cyan')}")
 
             else:
-                print(f"  Type: {colored(p_type.__name__, "cyan")}")
+                print(f"  Type: {col(p_type.__name__, "cyan")}")
 
         @staticmethod
         def preferences_saved(config_path: str) -> None:
@@ -170,7 +175,7 @@ class Menu:
             """
             config_name: str = os.path.basename(os.path.normpath(config_path))
 
-            print(f"\n{SUCCESS} Preferences saved to {colored(f"\'{config_name}\'", "cyan")}")
+            print(f"\n{SUCCESS} Preferences saved to {col(f"\'{config_name}\'", "cyan")}")
 
         @staticmethod
         def changes_cancelled() -> None:
@@ -193,6 +198,14 @@ class Menu:
             """
             print(f"\n{ACTION} Reset cancelled.")
 
+        @staticmethod
+        def created_config(config_path: str) -> None:
+            """
+            Message to display when config is created
+            :param config_path: Direct path to the config file
+            """
+            print(f"\n{INFO} Created config file at {col(f"\'{config_path}\'", "cyan")}")
+
     class Arguments:
         """
         Contains all menus for arguments passed to the script
@@ -203,11 +216,11 @@ class Menu:
             """
             Displays help menu
             """
-            print(f"{INFO} Usage: yt-dlp-adv2 {colored("[options]", "cyan")}"
+            print(f"{INFO} Usage: main.py {col("[options]", "cyan")}"
                   f"\n\nOptions:"
-                  f"\n{colored("-h, --help", "cyan")}: Show this help message."
-                  f"\n{colored("-v, --version", "cyan")}: Show script version."
-                  f"\n{colored("-c, --config", "cyan")}: Open the Config Editor.")
+                  f"\n{col("-h, --help", "cyan")}: Show this help message."
+                  f"\n{col("-v, --version", "cyan")}: Show script version."
+                  f"\n{col("-c, --config", "cyan")}: Open the Config Editor.")
 
         @staticmethod
         def show_version(v: str) -> None:
@@ -215,7 +228,7 @@ class Menu:
             Displays script version
             :param v: Version string from main
             """
-            print(f"{INFO} Script version: {colored(v, 'cyan')}")
+            print(f"{INFO} Script version: {col(v, 'cyan')}")
 
         @staticmethod
         def show_commits(g_commits: str) -> None:
@@ -223,7 +236,14 @@ class Menu:
             Displays GitHub link for commits/updates
             :param g_commits: GitHub commits link
             """
-            print(f"{INFO} GitHub commits: {colored(g_commits, 'cyan')}")
+            print(f"{INFO} GitHub commits: {col(g_commits, 'cyan')}")
+
+        @staticmethod
+        def defaults_bypassed() -> None:
+            """
+            Message to display when default preferences are bypassed
+            """
+            print(f"\n{INFO} Default preferences will be ignored for this session.")
 
     class Misc:
         """
@@ -242,7 +262,7 @@ class Menu:
             """
             Message when a download is aborted (Choosing N on the confirmation menu)
             """
-            print(f"\n{WARN} {colored("Download aborted.", "yellow")}")
+            print(f"\n{WARN} {col("Download aborted.", "yellow")}")
 
     class Input:
         """
@@ -273,11 +293,11 @@ class Menu:
             while True:
                 try:
                     if no_default:
-                        choice = input(f"> {colored(options_list, "magenta")}: ")
+                        choice = input(f"> {col(options_list, "magenta")}: ")
 
                     else:
-                        choice = input(f"> {colored(options_list, "magenta")} "
-                                       f"{colored(f"({default_option})", "cyan")}: ") or str(default_option)
+                        choice = input(f"> {col(options_list, "magenta")} "
+                                       f"{col(f"({default_option})", "cyan")}: ") or str(default_option)
 
                     # Handle integers
                     if choice.isnumeric():
@@ -293,19 +313,21 @@ class Menu:
 
                 except ValueError:
                     print(
-                        f"\n{FAIL} {colored(f"Invalid input. Please enter an integer from the following selection: {opt_range}", "red")}")
+                        f"\n{FAIL} {col(f"Invalid input. Please enter an option from the"
+                                        f" following selection: {opt_range}", "red")}")
 
         @staticmethod
-        def get_input_pref_value(p_key: str, p_value: Any) -> Any:
+        def get_input_pref_value(p_key: str, p_value: Any, d_value: Any) -> Any:
             """
             Special Input for the config editor. Get the new value for a preference
             :param p_key: Key of the preference. Used for overriding certain value types
             :param p_value: Current value of the preference
+            :param d_value: Default value of the preference
             :return: Returns a value for the selected preference
             """
 
-            # Get type of current preference
-            pv_type = type(p_value)
+            # Get required type
+            req_type = type(d_value)
 
             while True:
                 new_value = input(f"> {CYAN}")
@@ -323,23 +345,17 @@ class Menu:
                                 new_value = VideoQuality(value=new_value).quality
 
                             else:
-                                # ALlow setting default to null
+                                # Allow setting default to null
                                 new_value = ""
 
                         except VideoQuality.InvalidQuality:
-                            print(f"\n{FAIL} Invalid Video Quality: {colored(new_value, 'cyan')}")
+                            print(f"\n{FAIL} Invalid Video Quality: {col(new_value, 'cyan')}")
                             print(
-                                f"  Valid Video Qualities: {colored(', '.join(list(VideoQuality.resolutions.values())), 'cyan')}\n")
+                                f"  Valid Video Qualities: "
+                                f"{col(', '.join(list(VideoQuality.resolutions.values())), 'cyan')}\n")
                             continue
 
-                    elif pv_type is int:
-                        new_value = int(new_value)
-
-                    elif pv_type is float:
-                        new_value = float(new_value)
-
-                    elif pv_type is bool:
-
+                    elif isinstance(d_value, bool):
                         # Allow case-insensitive input
                         if new_value.lower() in ["true", "false"]:
                             new_value = (new_value.lower() == "true")
@@ -347,24 +363,30 @@ class Menu:
                         else:
                             raise ValueError
 
-                    elif pv_type is str:
+                    elif isinstance(d_value, int):
+                        new_value = int(new_value)
+
+                    elif isinstance(d_value, float):
+                        new_value = float(new_value)
+
+                    elif isinstance(d_value, str):
                         new_value = str(new_value)
 
                     else:
                         # If the type is not supported, display error
-                        print(f"{FAIL} Unsupported Type: {colored(pv_type.__name__, 'red')}")
+                        print(f"{FAIL} Unsupported Type: {col(req_type.__name__, 'red')}")
                         continue
 
                     # Display error if new value is same as current value
                     if new_value == p_value:
-                        print(f"\n{FAIL} {colored("New value cannot be the same as the current value.", "red")}")
+                        print(f"\n{FAIL} {col("New value cannot be the same as the current value.", "red")}")
 
                     else:
                         return new_value
 
                 except ValueError:
-                    print(f"\n{FAIL} Invalid Input: {colored(new_value, "cyan")}")
-                    print(f"  Expected Type: {colored(pv_type.__name__, "cyan")}\n")
+                    print(f"\n{FAIL} Invalid Input: {col(new_value, "cyan")}")
+                    print(f"  Expected Type: {col(req_type.__name__, "cyan")}\n")
 
         @staticmethod
         def get_input_pref(num_entries: int) -> int:
@@ -390,7 +412,7 @@ class Menu:
 
             while True:
                 try:
-                    choice = input(f"> {colored(options_list, "magenta")}: ")
+                    choice = input(f"> {col(options_list, "magenta")}: ")
 
                     # If choice is not save or cancel
                     if choice.upper() != "S" and choice.upper() != "C":
@@ -414,13 +436,14 @@ class Menu:
 
                 except ValueError:
                     print(
-                        f"\n{FAIL} {colored(f"Invalid input. Please enter a value "
-                                            f"between 1 and {num_entries}, or S for Save or C for Cancel.", "red")}")
+                        f"\n{FAIL} {col(f"Invalid input. Please enter a value "
+                                        f"between 1 and {num_entries}, or S for Save or C for Cancel.", "red")}")
 
         @staticmethod
         def get_input_num(num_entries: int = 3, default_option: int = 1, no_default: bool = False) -> int:
             """
-            Gets a numeric input from the user. If num_entries is greater than 8, use `Menu.Input.get_input_long()` instead.
+            Gets a numeric input from the user. If num_entries is greater than 8,
+            use `Menu.Input.get_input_long()` instead.
             :param default_option: The default option to select
             :param num_entries: Number of entries in the menu. Must be at least 2
             :param no_default: If True, will require the user to select an option
@@ -442,12 +465,13 @@ class Menu:
                 try:
                     if no_default:
                         choice: int = int(
-                            input(f"> {colored(options_list, "magenta")}: "))
+                            input(f"> {col(options_list, "magenta")}: "))
 
                     else:
                         choice: int = int(
                             input(
-                                f"> {colored(options_list, "magenta")} {colored(f"({default_option})", "cyan")}: ") or default_option)
+                                f"> {col(options_list, "magenta")} "
+                                f"{col(f"({default_option})", "cyan")}: ") or default_option)
 
                     if choice < 1 or choice > num_entries:
                         raise ValueError
@@ -456,7 +480,8 @@ class Menu:
 
                 except ValueError:
                     print(
-                        f"\n{FAIL} {colored(f"Invalid input. Please enter an integer between 1 and {num_entries}.", "red")}")
+                        f"\n{FAIL} {col(f"Invalid input. Please enter an integer between 1 and "
+                                        f"{num_entries}.", "red")}")
 
         @staticmethod
         def get_input_long(num_entries: int = 3, default_option: int = 1) -> int:
@@ -511,7 +536,8 @@ class Menu:
             while True:
                 try:
                     choice_str: str = (input(
-                        f"> {colored(options_list, "magenta")} {colored(f"({default_option})", "cyan")}: ").upper()
+                        f"> {col(options_list, "magenta")} "
+                        f"{col(f"({default_option})", "cyan")}: ").upper()
                                        or default_option)
 
                     if num_entries > 10:
@@ -545,12 +571,14 @@ class Menu:
                 except ValueError:
                     if num_entries > 10:
                         print(
-                            f"\n{FAIL} {colored(f"Invalid input. Please enter an integer or letter between 1-0 and "
-                                                f"{f"A-{max_entries_str}" if num_entries > 11 else max_entries_str}.", "red")}")
+                            f"\n{FAIL} {col(f"Invalid input. Please enter an integer or letter between 1-0 and "
+                                            f"{f"A-{max_entries_str}" if num_entries > 11 else \
+                                                max_entries_str}.", "red")}")
 
                     else:
                         print(
-                            f"\n{FAIL} {colored(f"Invalid input. Please enter an integer between 1 and {"0" if num_entries > 9 else num_entries}.", "red")}")
+                            f"\n{FAIL} {col(f"Invalid input. Please enter an integer between 1 and {"0" \
+                                if num_entries > 9 else num_entries}.", "red")}")
 
         @staticmethod
         def get_input_bool(default_option: bool) -> bool:
@@ -562,7 +590,8 @@ class Menu:
             while True:
                 try:
                     choice: str = input(
-                        f"> {colored(f"[{'Y' if default_option else 'y'}/{'N' if not default_option else 'n'}]", "magenta")}: "
+                        f"> {col(f"[{'Y' if default_option else 'y'}/"
+                                 f"{'N' if not default_option else 'n'}]", "magenta")}: "
                     ).lower()
 
                     if choice not in ["y", "n"] and choice != "":
@@ -575,7 +604,7 @@ class Menu:
 
                 except ValueError:
                     print(
-                        f"\n{FAIL} {colored("Invalid input. Please enter 'Y' or 'N'.", "red")}")
+                        f"\n{FAIL} {col("Invalid input. Please enter 'Y' or 'N'.", "red")}")
 
         @staticmethod
         def get_input_url() -> str:
@@ -583,6 +612,9 @@ class Menu:
             Get the URL of the item
             :return: The URL of the item
             """
+            allowed: list[str] = ["www.youtube.com", "youtube.com", "www.youtu.be", "youtu.be"]
+            is_allowed: bool = True
+
             while True:
                 try:
                     url: str = input(f"> {CYAN}")
@@ -590,14 +622,24 @@ class Menu:
                     # Reset ANSI codes
                     print(RESET, end="")
 
+                    # Handle Invalid URLs
                     if ("https://" not in url and "http://" not in url) or url == "":
+                        raise ValueError
+
+                    # Handle non-YouTube URLs
+                    is_allowed = Utilities.is_allowed_url(url=url, allowed_urls=allowed)
+
+                    if not is_allowed:
                         raise ValueError
 
                     return url
 
                 except ValueError:
-                    print(
-                        f"\n{FAIL} {colored('Invalid input. Please enter a valid URL.', 'red')}")
+                    if not is_allowed:
+                        Menu.Problem.Error.not_youtube_url(allowed_urls=allowed)
+
+                    else:
+                        Menu.Problem.Error.invalid_url()
 
     @staticmethod
     def gap(length: int = 3):
@@ -619,26 +661,30 @@ class Menu:
             :param v: The version of the script. If provided, it will be displayed
             """
 
-            print(f"\nWelcome to {colored("YouTube Downloader: Advanced 2.0", "red")}!")
+            print(f"\nWelcome to {col("YouTube Downloader: Advanced 2.0", "red")}!")
 
             if v:
                 Menu.Arguments.show_version(v=v)
 
             print(
-                f"\n{colored('●', "red")} This is a Python program that simplifies the use of the "
-                f"{colored("yt-dlp", "red")} tool ({colored("https://github.com/yt-dlp/yt-dlp", "cyan")}).")
+                f"\n{col('●', "red")} This is a Python program that simplifies the use of the "
+                f"{col("yt-dlp", "red")} tool "
+                f"({col("https://github.com/yt-dlp/yt-dlp", "cyan")}).")
             print(
-                f"{colored('●', "red")} It provides a menu-driven interface to help you "
+                f"{col('●', "red")} It provides a menu-driven interface to help you "
                 f"download videos, audio, and thumbnails from YouTube.")
             print(
-                f"{colored('●', "red")} You can customize download options and formats without "
+                f"{col('●', "red")} You can customize download options and formats without "
                 f"needing to remember complex yt-dlp arguments.")
-            print(f"{colored('●', "red")} The program supports downloading entire playlists or single items.")
-            print(f"{colored('●', "red")} It also offers detailed feedback on the download status and file sizes.\n")
+            print(f"{col('●', "red")} The program supports downloading entire playlists or single items.")
+            print(f"{col('●', "red")} It also offers detailed feedback on the download "
+                  "status and file sizes.\n")
             print(
-                f"{colored('●', "magenta")} This is a remake of the original {colored('yt-dlp-adv', 'cyan')}, "
+                f"{col('●', "magenta")} This is a remake of the original "
+                f"{col('yt-dlp-adv', 'cyan')}, "
                 f"now with new features and quality-of-life improvements.")
-            print(f"{colored('●', "yellow")} Script made by {colored("AstroLightz", "cyan")}. I hope you enjoy!\n\n")
+            print(f"{col('●', "yellow")} Script made by {col("AstroLightz", "cyan")}. "
+                  f"I hope you enjoy!")
 
         @staticmethod
         def main_menu() -> None:
@@ -646,9 +692,9 @@ class Menu:
             Displays list of download types
             """
             print(f"\n{INFO} What would you like to download?")
-            print(f"  {colored('1', "cyan")}) Videos")
-            print(f"  {colored('2', "cyan")}) Audio")
-            print(f"  {colored('3', "cyan")}) Thumbnails")
+            print(f"  {col('1', "cyan")}) Videos")
+            print(f"  {col('2', "cyan")}) Audio")
+            print(f"  {col('3', "cyan")}) Thumbnails")
 
         @staticmethod
         def item_count() -> None:
@@ -656,8 +702,8 @@ class Menu:
             Get if item is a playlist or single item
             """
             print(f"\n{INFO} Is it a playlist or a single item?")
-            print(f"  {colored('1', "cyan")}) Single Item")
-            print(f"  {colored('2', "cyan")}) Playlist")
+            print(f"  {col('1', "cyan")}) Single Item")
+            print(f"  {col('2', "cyan")}) Playlist")
 
         @staticmethod
         def filename_format_s() -> None:
@@ -665,8 +711,8 @@ class Menu:
             [Single Item] Get the format for the filename
             """
             print(f"\n{INFO} What format do you want the filenames to be?")
-            print(f"  {colored('1', "cyan")}) (uploader) - (title).(ext)")
-            print(f"  {colored('2', "cyan")}) (title).(ext)")
+            print(f"  {col('1', "cyan")}) (uploader) - (title).(ext)")
+            print(f"  {col('2', "cyan")}) (title).(ext)")
 
         @staticmethod
         def filename_format_p() -> None:
@@ -674,10 +720,10 @@ class Menu:
             [Playlist] Get the format for the filename
             """
             print(f"\n{INFO} What format do you want the filenames to be?")
-            print(f"  {colored('1', "cyan")}) (uploader) - (title).(ext)")
-            print(f"  {colored('2', "cyan")}) (title).(ext)")
-            print(f"  {colored('3', "cyan")}) (item #) - (uploader) - (title).(ext)")
-            print(f"  {colored('4', "cyan")}) (item #) - (title).(ext)")
+            print(f"  {col('1', "cyan")}) (uploader) - (title).(ext)")
+            print(f"  {col('2', "cyan")}) (title).(ext)")
+            print(f"  {col('3', "cyan")}) (item #) - (uploader) - (title).(ext)")
+            print(f"  {col('4', "cyan")}) (item #) - (title).(ext)")
 
         @staticmethod
         def get_url() -> None:
@@ -707,15 +753,17 @@ class Menu:
 
             # Display confirmation screen
             print(f"\n{INFO} Chosen Options:"
-                  f"\n - Download Type: {colored(f"'{v_dwn_type}'", "cyan")}"
-                  f"\n - File Format: {colored(f"'{v_file_format}'", "cyan")}"
-                  f"\n - Mode: {colored(f"'{v_item_count}'", "cyan")}", end="")
+                  f"\n - Download Type: {col(f"'{v_dwn_type}'", "cyan")}"
+                  f"\n - File Format: {col(f"'{v_file_format}'", "cyan")}"
+                  f"\n - Mode: {col(f"'{v_item_count}'", "cyan")}", end="")
 
             # Hide filename format for Artwork
-            print(f"\n - Filename Format: {colored(f"'{v_filename_format}'", "cyan")}" if dwn_type != 3 else "", end="")
+            print(f"\n - Filename Format: {col(f"'{v_filename_format}'", "cyan")}" \
+                      if dwn_type != 3 else "", end="")
 
             # Show video quality for Videos
-            print(f"\n - Video Quality: {colored(f"'{video_quality}'", "cyan")}" if video_quality else "", end="")
+            print(f"\n - Video Quality: {col(f"'{video_quality}'", "cyan")}" \
+                      if video_quality else "", end="")
 
             print("\n")
             print(f"{INFO} Proceed with the download?")
@@ -726,12 +774,12 @@ class Menu:
         """
 
         @staticmethod
-        def processing_url():
+        def processing_download():
             """
             Message to display while processing the URL
             """
 
-            print(f"\n{ACTION} Processing URL. Please wait...")
+            print(f"\n{ACTION} Preparing to download. Please wait...")
 
         @staticmethod
         def starting_download(count: int) -> None:
@@ -739,7 +787,7 @@ class Menu:
             Message to display when the download starts
             :param count: Number of items to download
             """
-            print(f"\n{ACTION} Starting to download {colored(count, "yellow")} {"items" if count > 1 else "item"}. "
+            print(f"\n{ACTION} Starting to download {col(count, "yellow")} {"items" if count > 1 else "item"}. "
                   f"Please be patient as this might take a while...\n")
 
         @staticmethod
@@ -753,8 +801,14 @@ class Menu:
             :param downloaded: Downloaded bytes
             :param total: Total bytes
             :param dwn_percent: Download percentage
-            :param status: Status integer of download, from progress_hook (0 = Finished, 1 = Downloading, 2 = Post-Process, -1 = Error)
+            :param status: Status integer of download, from progress_hook
             :param title: Title of the item being downloaded
+
+            Status codes:
+                - ``0`` = Finished
+                - ``1`` = Downloading
+                - ``2`` = Post-Processing
+                - ``-1`` = Error
             """
 
             # Convert sizes
@@ -766,20 +820,20 @@ class Menu:
 
             # Set status symbol
             if status == 1:
-                sym_status: str = colored("⧗", "cyan")
+                sym_status: str = col("⧗", "cyan")
             elif status == 0:
-                sym_status: str = colored("✔", "green")
+                sym_status: str = col("✔", "green")
             elif status == -1:
-                sym_status: str = colored("✘", "red")
+                sym_status: str = col("✘", "red")
             elif status == 2:
-                sym_status: str = colored("⧗", "magenta")
+                sym_status: str = col("⧗", "magenta")
             else:
-                sym_status: str = colored("?", "yellow")
+                sym_status: str = col("?", "yellow")
 
             print(
-                f"{colored(f"({cur_item}/{total_items})", "yellow")} [{sym_status}] "
-                f"{colored(f"\'{title}\'", "cyan")}: {c_downloaded} / {c_total} "
-                f"{colored(f"({dwn_percent}%)", "magenta")}", end="")
+                f"{col(f"({cur_item}/{total_items})", "yellow")} [{sym_status}] "
+                f"{col(f"\'{title}\'", "cyan")}: {c_downloaded} / {c_total} "
+                f"{col(f"({dwn_percent}%)", "magenta")}", end="")
 
         @staticmethod
         def download_status_a(cur_item: int, total_items: int, title: str) -> None:
@@ -790,8 +844,8 @@ class Menu:
             :param total_items: Total items
             :param title: Title of item
             """
-            print(f"{colored(f"({cur_item}/{total_items})", "yellow")} [{colored("✔", "green")}] "
-                  f"{colored(f"\'{title}\'", "cyan")}")
+            print(f"{col(f"({cur_item}/{total_items})", "yellow")} [{col("✔", "green")}] "
+                  f"{col(f"\'{title}\'", "cyan")}")
 
         @staticmethod
         def all_downloads_complete(completed: int, total: int, path_dir: str, size: str) -> None:
@@ -802,12 +856,12 @@ class Menu:
             :param path_dir: Path to the directory where the downloads are saved
             :param size: Size string containing size of download and unit (bytes)
             """
-            print(f"\n\n\n{colored('●', "red")}{colored('●', "magenta")}{colored('●', "yellow")}"
-                  f" {colored("Download Summary", "green", attrs=["bold", "underline"])} "
-                  f"{colored('●', "yellow")}{colored('●', "magenta")}{colored('●', "red")}")
-            print(f"{SUCCESS} {colored(completed, "yellow")} out of {colored(total, "yellow")} item(s) downloaded "
-                  f"successfully to {colored(f"\'{path_dir}\'", "cyan")}. ")
-            print(f"Used {colored(size, "yellow")} of storage.")
+            print(f"\n\n\n{col('●', "red")}{col('●', "magenta")}{col('●', "yellow")}"
+                  f" {col("Download Summary", "green", attrs=["bold", "underline"])} "
+                  f"{col('●', "yellow")}{col('●', "magenta")}{col('●', "red")}")
+            print(f"{SUCCESS} {col(completed, "yellow")} out of {col(total, "yellow")} item(s) downloaded "
+                  f"successfully to {col(f"\'{path_dir}\'", "cyan")}.")
+            print(f"  Used {col(size, "yellow")} of storage.")
 
         @staticmethod
         def failed_downloads_list(failed: int, items: list[str]) -> None:
@@ -816,10 +870,10 @@ class Menu:
             :param failed: Number of failed downloads
             :param items: List of failed downloads' titles
             """
-            print(f"{FAIL} {colored(failed, "red")} item(s) failed to download:")
+            print(f"{FAIL} {col(failed, "red")} item(s) failed to download:")
 
             for title in items:
-                print(f"  - {colored(f"\'{title}\'", "cyan")}")
+                print(f"  - {col(f"\'{title}\'", "cyan")}")
 
         @staticmethod
         def redownloading_item(item: str) -> None:
@@ -827,7 +881,7 @@ class Menu:
             Message to display when the user wants to re-download an item
             :param item: Name of the item
             """
-            print(f"{ACTION} Deleting {colored(f"\'{item}\'", "cyan")} and re-downloading...")
+            print(f"{ACTION} Deleting {col(f"\'{item}\'", "cyan")} and re-downloading...")
 
     class Video:
         """
@@ -840,9 +894,9 @@ class Menu:
             Displays list of video file formats
             """
             print(f"\n{INFO} What file format do you want to use?")
-            print(f"  {colored('1', "cyan")}) MP4")
-            print(f"  {colored('2', "cyan")}) MKV")
-            print(f"  {colored('3', "cyan")}) WEBM")
+            print(f"  {col('1', "cyan")}) MP4")
+            print(f"  {col('2', "cyan")}) MKV")
+            print(f"  {col('3', "cyan")}) WEBM")
 
         @staticmethod
         def video_quality_status() -> None:
@@ -859,7 +913,7 @@ class Menu:
             print(f"\n{INFO} What video quality do you want to use?")
 
             for i, quality in enumerate(qualities):
-                print(f"  {colored(str(i + 1), 'cyan')}) {quality}")
+                print(f"  {col(str(i + 1), 'cyan')}) {quality}")
 
         @staticmethod
         def default_quality(quality: str) -> None:
@@ -868,7 +922,7 @@ class Menu:
             :param quality: Quality
             """
             print("", end="\x1b[1K\r")
-            print(f"{INFO} Using default quality: {colored(quality, 'cyan')}")
+            print(f"{INFO} Using default quality: {col(quality, 'cyan')}")
 
     class Audio:
         """
@@ -881,10 +935,10 @@ class Menu:
             Displays list of audio file formats
             """
             print(f"\n{INFO} What file format do you want to use?")
-            print(f"  {colored('1', "cyan")}) MP3")
-            print(f"  {colored('2', "cyan")}) OGG")
-            print(f"  {colored('3', "cyan")}) WAV")
-            print(f"  {colored('4', "cyan")}) FLAC")
+            print(f"  {col('1', "cyan")}) MP3")
+            print(f"  {col('2', "cyan")}) OGG")
+            print(f"  {col('3', "cyan")}) WAV")
+            print(f"  {col('4', "cyan")}) FLAC")
 
     class Artwork:
         """
@@ -897,8 +951,8 @@ class Menu:
             Displays list of image file formats
             """
             print(f"\n{INFO} What file format do you want to use?")
-            print(f"  {colored('1', "cyan")}) PNG")
-            print(f"  {colored('2', "cyan")}) JPG")
+            print(f"  {col('1', "cyan")}) PNG")
+            print(f"  {col('2', "cyan")}) JPG")
 
     class Problem:
         """
@@ -913,34 +967,36 @@ class Menu:
             @staticmethod
             def duplicate_playlist(path: str) -> None:
                 """
-                Message to display when a playlist already exists on the user's device and user does not want to re-download
+                Message to display when a playlist already exists on the user's device and user
+                does not want to re-download
                 :param path: Direct path to the playlist on the disk
                 """
-                print(f"\n{SUCCESS} Playlist is already downloaded to {colored(path, "cyan")}.")
+                print(f"\n{SUCCESS} Playlist is already downloaded to {col(f"\'{path}\'", "cyan")}.")
 
             @staticmethod
             def duplicate_single_item(path: str) -> None:
                 """
-                Message to display when a single item already exists on the user's device and user does not want to re-download
+                Message to display when a single item already exists on the user's
+                device and user does not want to re-download
                 :param path: Direct path to the item on the disk
                 """
-                print(f"\n{SUCCESS} Item is already downloaded to {colored(path, "cyan")}.")
+                print(f"\n{SUCCESS} Item is already downloaded to {col(f"\'{path}\'", "cyan")}.")
 
             @staticmethod
             def mode_change_single() -> None:
                 """
                 Message to display when user chooses to switch from Playlist to Single Item
                 """
-                print(f"\n{SUCCESS} Mode changed successfully from {colored("Playlist", "red")} "
-                      f"to {colored("Single Item", "green")}. Continuing with download...")
+                print(f"\n{SUCCESS} Mode changed successfully from {col("Playlist", "red")} "
+                      f"to {col("Single Item", "green")}. Continuing with download...")
 
             @staticmethod
             def mode_change_playlist() -> None:
                 """
                 Message to display when user chooses to switch from Single Item to Playlist
                 """
-                print(f"\n{SUCCESS} Mode changed successfully from {colored("Single Item", "red")} "
-                      f"to {colored("Playlist", "green")}. Continuing with download...")
+                print(f"\n{SUCCESS} Mode changed successfully from {col("Single Item", "red")} "
+                      f"to {col("Playlist", "green")}. Continuing with download...")
 
             @staticmethod
             def video_qualities_found(num_qualities: int) -> None:
@@ -950,7 +1006,15 @@ class Menu:
                 """
                 print("", end="\x1b[1K\r")
                 print(
-                    f"{SUCCESS} Found {colored(num_qualities, "cyan")} available video qualit{"ies" if num_qualities > 1 else "y"}.")
+                    f"{SUCCESS} Found {col(num_qualities, "cyan")} available video "
+                    f"qualit{"ies" if num_qualities > 1 else "y"}.")
+
+            @staticmethod
+            def config_no_problems() -> None:
+                """
+                Message to display when the config file has no problems
+                """
+                print(f"\n{SUCCESS} {col("No problems found in the config file.", "green")}")
 
         class Warning:
             """
@@ -962,33 +1026,33 @@ class Menu:
                 """
                 Warning to display when the URL is a playlist, but "Single Item" was selected
                 """
-                print(f"\n{WARN} The URL contains more than one item, when {colored("Single Item", "red")} mode "
-                      f"was chosen.")
-                print(f"\n{INFO} Do you want to switch to {colored("Playlist", "green")} mode?")
+                print(f"\n{WARN} The URL contains more than one item, when "
+                      f"{col("Single Item", "red")} mode was chosen.")
+                print(f"\n{INFO} Do you want to switch to {col("Playlist", "green")} mode?")
 
             @staticmethod
             def url_is_single_item() -> None:
                 """
                 Warning to display when the URL is a single item, but "Playlist" was selected
                 """
-                print(f"\n{WARN} The URL contains only one item, when {colored("Playlist", "red")} mode "
-                      f"was chosen.\nDo you want to switch to {colored("Single Item", "green")} mode?")
+                print(f"\n{WARN} The URL contains only one item, when {col("Playlist", "red")} mode "
+                      f"was chosen.\nDo you want to switch to {col("Single Item", "green")} mode?")
 
             @staticmethod
             def duplicate_playlist(title: str) -> None:
                 """
                 Warning when a playlist already exists on the user's device
                 """
-                print(f"\n{WARN} The playlist {colored(f"\'{title}\'", "cyan")} already exists. "
-                      f"Do you want to re-download it?")
+                print(f"\n{WARN} {col("The playlist", "yellow")} {col(f"\'{title}\'", "cyan")} "
+                      f"{col("already exists. Do you want to re-download it?", "yellow")}")
 
             @staticmethod
             def duplicate_single_item(title: str) -> None:
                 """
                 Warning when a single item already exists on the user's device
                 """
-                print(f"\n{WARN} The item {colored(f"\'{title}\'", 'cyan')} already exists. "
-                      f"Do you want to re-download it?")
+                print(f"\n{WARN} {col("The item", "yellow")} {col(f"\'{title}\'", "cyan")} "
+                      f"{col("already exists. Do you want to re-download it?", "yellow")}")
 
             @staticmethod
             def no_video_qualities() -> None:
@@ -996,7 +1060,8 @@ class Menu:
                 Message to display when no video qualities are found
                 """
                 print("", end="\x1b[1K\r")
-                print(f"{WARN} {colored("No available video qualities found. Using best quality.", "yellow")}")
+                print(f"{WARN} {col("No available video qualities found. "
+                                    "Using best quality.", "yellow")}")
 
             @staticmethod
             def default_quality_unavailable(quality: str, next_quality: str) -> None:
@@ -1007,7 +1072,34 @@ class Menu:
                 """
                 print("", end="\x1b[1K\r")
                 print(
-                    f"{WARN} {colored(f"Default quality {quality} is not available. Using next best quality: {next_quality}", "yellow")}")
+                    f"{WARN} {col(f"Default quality {quality} is not available. "
+                                  f"Using next best quality: {next_quality}", "yellow")}")
+
+            @staticmethod
+            def config_problems(e: Exception | list[Exception]) -> None:
+                """
+                Warning to display when there is one or more problems with the config file that
+                prevents the Downloader from working
+                :param e: Config Error or list of Config Errors
+                """
+
+                num_errors: int = len(e) if isinstance(e, list) else 1
+                print(f"\n{WARN} {col(f"Found {num_errors} problem{'s' if num_errors > 1 else ''} "
+                                      f"with the configuration file:", "yellow")}")
+
+                if isinstance(e, list):
+                    for error in e:
+                        print(col(f"  - {error}", "yellow"))
+
+                else:
+                    print(col(f"  - {e}", "yellow"))
+
+            @staticmethod
+            def config_force_reset() -> None:
+                """
+                Warning to display when the config file has to be reset due to being malformed
+                """
+                print(f"\n{WARN} {col("Config file is malformed and must be reset to default.", "yellow")}")
 
         class Error:
             """
@@ -1020,12 +1112,22 @@ class Menu:
                 Generic error message
                 :param error: Exception
                 """
-                print(f"{FAIL} {colored(error, "red")}")
+                print(f"\n{FAIL} {col(error, "red")}")
 
             @staticmethod
             def invalid_url() -> None:
-                print(f"{FAIL} The entered URL is not valid. Please make sure the URL starts with "
-                      f"{colored("\'https\'", "cyan")} or {colored("\'http\'", "cyan")}.")
+                """
+                Error when the URL is not valid
+                """
+                print(f"\n{FAIL} {col("Invalid URL. URL should start with 'https' or 'http'.", "red")}")
+
+            @staticmethod
+            def not_youtube_url(allowed_urls: list[str]) -> None:
+                """
+                Error when the URL is not a YouTube URL
+                :param allowed_urls: List of allowed URLs
+                """
+                print(f"\n{FAIL} {col(f"Not a valid YouTube URL: '{"', '".join(allowed_urls)}'", "red")}")
 
             @staticmethod
             def incorrect_mode_single() -> None:
@@ -1033,9 +1135,10 @@ class Menu:
                 Error when user chooses the Playlist instead of Single Item, and does not want to switch
                 """
                 print(
-                    f"\n{FAIL} Cannot download items due to incorrect mode selected. Please choose the right mode for the provided URL.")
-                print(f"- Chosen Mode: {colored("Playlist", "red")}")
-                print(f"- Correct Mode: {colored("Single Item", "green")}")
+                    f"\n{FAIL} Cannot download items due to incorrect mode selected. "
+                    f"Please choose the right mode for the provided URL.")
+                print(f"- Chosen Mode: {col("Playlist", "red")}")
+                print(f"- Correct Mode: {col("Single Item", "green")}")
 
             @staticmethod
             def incorrect_mode_playlist() -> None:
@@ -1043,13 +1146,38 @@ class Menu:
                 Error when user chooses the Single Item instead of Playlist, and does not want to switch
                 """
                 print(
-                    f"\n{FAIL} Cannot download items due to incorrect mode selected. Please choose the right mode for the provided URL.")
-                print(f"- Chosen Mode: {colored("Single Item", "red")}")
-                print(f"- Correct Mode: {colored("Playlist", "green")}")
+                    f"\n{FAIL} Cannot download items due to incorrect mode selected. "
+                    f"Please choose the right mode for the provided URL.")
+                print(f"- Chosen Mode: {col("Single Item", "red")}")
+                print(f"- Correct Mode: {col("Playlist", "green")}")
 
             @staticmethod
             def pref_already_default() -> None:
                 """
                 Error when all preferences are already set to default
                 """
-                print(f"\n{FAIL} {colored("Preferences are already set to default.", "red")}")
+                print(f"\n{FAIL} {col("Preferences are already set to default.", "red")}")
+
+            @staticmethod
+            def config_error(e: Exception | list[Exception], config_path: str) -> None:
+                """
+                Error when there is an issue with the config file
+                :param e: Config Error or list of Config Errors
+                :param config_path: Config Path
+                """
+                num_errors: int = len(e) if isinstance(e, list) else 1
+                print(f"\n{FAIL} {col(f"Cannot run Downloader. The following "
+                                      f"{f"{num_errors} " if num_errors > 1 else ''}"
+                                      f"error{'s' if num_errors > 1 else ''} occurred:", "red")}")
+
+                # Handle lists of errors
+                if isinstance(e, list):
+                    for error in e:
+                        print(col(f"  - {error}", "red"))
+
+                else:
+                    print(col(f"  - {e}", "red"))
+
+                print(f"\n  {col("Correct this issue in the config file or through the Config Editor."
+                                 f"\n  - Config path: \'{config_path}\'"
+                                 "\n  - Config Editor: \'main.py -c\' or \'main.py --config\'", "red")}")

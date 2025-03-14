@@ -7,7 +7,7 @@ from sys import stdout
 
 from wand.image import Image
 
-from confighandler import ConfigHandler
+from confighandler import ConfigHandler, ConfigValidator, ConfigError
 from downloader import Downloader
 from menu import Menu
 from utilities import Utilities
@@ -15,7 +15,14 @@ from videoquality import VideoQuality
 
 
 class Backend:
-    def __init__(self):
+    def __init__(self, bypass_defaults: bool = False):
+        """
+        Backend for yt-dlp-adv2
+        :param bypass_defaults: If true, will bypass any default preferences in config file.
+        """
+
+        # Argument Vars
+        self.bypass_defaults = bypass_defaults
 
         # Input Vars
         self.dwn_type = None
@@ -54,11 +61,36 @@ class Backend:
         self.ytdlp_options: dict = {}
 
         # Get config file
-        self.CONFIG: dict = ConfigHandler(file="config.yml").get_config()
+        self.ch: ConfigHandler = ConfigHandler(file="config.yml")
+        self.CONFIG: dict = self.ch.get_config()
+
+        # Validate config file
+        try:
+            errors: list[ConfigError] = ConfigValidator(config_handler=self.ch).config_errors
+
+            if errors:
+                # Display all errors
+                Menu.Problem.Error.config_error(e=errors, config_path=self.ch.config_path)
+                exit(1)
+
+        except ConfigError as e:
+            Menu.Problem.Error.config_error(e=e, config_path=self.ch.config_path)
+            exit(1)
 
         # Display program header and version if enabled
         if self.CONFIG["show_header"]:
             Menu.Main.program_header(v=Utilities.VERSION if self.CONFIG["show_version"] else None)
+
+            # Display between header and main menu if header is shown
+            if self.bypass_defaults:
+                Menu.Arguments.defaults_bypassed()
+
+            else:
+                Menu.gap(2)
+
+        elif self.bypass_defaults:
+            # Display before main menu
+            Menu.Arguments.defaults_bypassed()
 
         Menu.Main.main_menu()
         Menu.gap(1)
@@ -68,38 +100,39 @@ class Backend:
 
         # File Format
         # Get download directory from config
-        if self.dwn_type == 1:
-            # Video
-            path: str = os.path.expandvars(os.path.expanduser(self.CONFIG["video_directory"]))
+        match self.dwn_type:
+            case 1:
+                # Video
+                path: str = os.path.expandvars(os.path.expanduser(self.CONFIG["video_directory"]))
 
-            # Remove trailing slash if it exists
-            if path[-1] == "/":
-                path = path[:-1]
+                # Remove trailing slash if it exists
+                if path[-1] == "/":
+                    path = path[:-1]
 
-            self.download_dir = f"{Path(path).resolve()}/"
-            self.menu_video()
+                self.download_dir = f"{Path(path).resolve()}/"
+                self.menu_video()
 
-        elif self.dwn_type == 2:
-            # Audio
-            path: str = os.path.expandvars(os.path.expanduser(self.CONFIG["audio_directory"]))
+            case 2:
+                # Audio
+                path: str = os.path.expandvars(os.path.expanduser(self.CONFIG["audio_directory"]))
 
-            # Remove trailing slash if it exists
-            if path[-1] == "/":
-                path = path[:-1]
+                # Remove trailing slash if it exists
+                if path[-1] == "/":
+                    path = path[:-1]
 
-            self.download_dir = f"{Path(path).resolve()}/"
-            self.menu_audio()
+                self.download_dir = f"{Path(path).resolve()}/"
+                self.menu_audio()
 
-        elif self.dwn_type == 3:
-            # Artwork
-            path: str = os.path.expandvars(os.path.expanduser(self.CONFIG["artwork_directory"]))
+            case 3:
+                # Artwork
+                path: str = os.path.expandvars(os.path.expanduser(self.CONFIG["artwork_directory"]))
 
-            # Remove trailing slash if it exists
-            if path[-1] == "/":
-                path = path[:-1]
+                # Remove trailing slash if it exists
+                if path[-1] == "/":
+                    path = path[:-1]
 
-            self.download_dir = f"{Path(path).resolve()}/"
-            self.menu_artwork()
+                self.download_dir = f"{Path(path).resolve()}/"
+                self.menu_artwork()
 
         # Item Count
         self.menu_item_count()
@@ -136,17 +169,18 @@ class Backend:
 
         self.file_format: int = Menu.Input.get_input_num(num_entries=3, default_option=1)
 
-        if self.file_format == 1:
-            # MP4
-            self.file_ext: str = "mp4"
+        match self.file_format:
+            case 1:
+                # MP4
+                self.file_ext: str = "mp4"
 
-        elif self.file_format == 2:
-            # MKV
-            self.file_ext: str = "mkv"
+            case 2:
+                # MKV
+                self.file_ext: str = "mkv"
 
-        elif self.file_format == 3:
-            # WEBM
-            self.file_ext: str = "webm"
+            case 3:
+                # WEBM
+                self.file_ext: str = "webm"
 
         self.download_dir += f"{self.file_ext.upper()}/"
 
@@ -161,18 +195,22 @@ class Backend:
             return
 
         # If default video quality is set and is available, use it
-        if self.CONFIG["default_video_quality"] and self.CONFIG["default_video_quality"] in self.video_qualities:
-            self.video_quality = self.CONFIG["default_video_quality"]
+        # Bypass if bypass defaults is enabled
+        if not self.bypass_defaults:
+            if self.CONFIG["default_video_quality"] and self.CONFIG["default_video_quality"] in self.video_qualities:
+                self.video_quality = self.CONFIG["default_video_quality"]
 
-            Menu.Video.default_quality(quality=self.CONFIG["default_video_quality"])
-            return
+                Menu.Video.default_quality(quality=self.CONFIG["default_video_quality"])
+                return
 
-        elif self.CONFIG["default_video_quality"]:
-            # If default video quality is set but not available, display message
-            self.video_quality = VideoQuality.next_best_quality(v_quality=self.CONFIG["default_video_quality"], available=self.video_qualities)
+            elif self.CONFIG["default_video_quality"]:
+                # If default video quality is set but not available, display message
+                self.video_quality = VideoQuality.next_best_quality(v_quality=self.CONFIG["default_video_quality"],
+                                                                    available=self.video_qualities)
 
-            Menu.Problem.Warning.default_quality_unavailable(quality=self.CONFIG["default_video_quality"], next_quality=self.video_quality)
-            return
+                Menu.Problem.Warning.default_quality_unavailable(quality=self.CONFIG["default_video_quality"],
+                                                                 next_quality=self.video_quality)
+                return
 
         Menu.Problem.Success.video_qualities_found(num_qualities=len(self.video_qualities))
         Menu.Video.video_quality(qualities=self.video_qualities)
@@ -188,21 +226,22 @@ class Backend:
 
         self.file_format: int = Menu.Input.get_input_num(num_entries=4, default_option=1)
 
-        if self.file_format == 1:
-            # MP3
-            self.file_ext: str = "mp3"
+        match self.file_format:
+            case 1:
+                # MP3
+                self.file_ext: str = "mp3"
 
-        elif self.file_format == 2:
-            # OGG
-            self.file_ext: str = "ogg"
+            case 2:
+                # OGG
+                self.file_ext: str = "ogg"
 
-        elif self.file_format == 3:
-            # WAV
-            self.file_ext: str = "wav"
+            case 3:
+                # WAV
+                self.file_ext: str = "wav"
 
-        elif self.file_format == 4:
-            # FLAC
-            self.file_ext: str = "flac"
+            case 4:
+                # FLAC
+                self.file_ext: str = "flac"
 
         self.download_dir += f"{self.file_ext.upper()}/"
 
@@ -212,13 +251,14 @@ class Backend:
 
         self.file_format: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
 
-        if self.file_format == 1:
-            # PNG
-            self.file_ext: str = "png"
+        match self.file_format:
+            case 1:
+                # PNG
+                self.file_ext: str = "png"
 
-        elif self.file_format == 2:
-            # JPG
-            self.file_ext: str = "jpg"
+            case 2:
+                # JPG
+                self.file_ext: str = "jpg"
 
         self.download_dir += f"{self.file_ext.upper()}/"
 
@@ -230,34 +270,36 @@ class Backend:
 
         self.item_count: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
 
-        if self.item_count == 1:
-            # Single item
-            self.download_dir += "Singles/"
+        match self.item_count:
+            case 1:
+                # Single item
+                self.download_dir += "Singles/"
 
-        elif self.item_count == 2:
-            # Playlist
-            self.download_dir += "Playlists/"
+            case 2:
+                # Playlist
+                self.download_dir += "Playlists/"
 
     ### Get filename format ###
 
     def menu_filename_format(self):
 
         # Handle different filename formats prompts
-        if self.item_count == 1:
-            # Single item
-            Menu.Main.filename_format_s()
-            Menu.gap(1)
+        match self.item_count:
+            case 1:
+                # Single item
+                Menu.Main.filename_format_s()
+                Menu.gap(1)
 
-            self.filename_format: int = Menu.Input.get_input_num(
-                num_entries=len(Utilities.FILENAME_FORMATS["filename_format_s"]), default_option=1)
+                self.filename_format: int = Menu.Input.get_input_num(
+                    num_entries=len(Utilities.FILENAME_FORMATS["filename_format_s"]), default_option=1)
 
-        elif self.item_count == 2:
-            # Playlist
-            Menu.Main.filename_format_p()
-            Menu.gap(1)
+            case 2:
+                # Playlist
+                Menu.Main.filename_format_p()
+                Menu.gap(1)
 
-            self.filename_format: int = Menu.Input.get_input_num(
-                num_entries=len(Utilities.FILENAME_FORMATS["filename_format_p"]), default_option=1)
+                self.filename_format: int = Menu.Input.get_input_num(
+                    num_entries=len(Utilities.FILENAME_FORMATS["filename_format_p"]), default_option=1)
 
     ### Get URL ###
 
@@ -390,21 +432,22 @@ class Backend:
         """
 
         # Determine status int
-        if status == "downloading" and post_processing:
-            # Post-processing
-            n_status: int = 2
+        match status:
+            case "downloading" if post_processing:
+                # Post-processing
+                n_status: int = 2
 
-        elif status == "downloading":
-            # Downloading
-            n_status: int = 1
+            case "downloading":
+                # Downloading
+                n_status: int = 1
 
-        elif status == "finished":
-            # Finished
-            n_status: int = 0
+            case "finished":
+                # Finished
+                n_status: int = 0
 
-        else:
-            # Error
-            n_status: int = -1
+            case _:
+                # Error
+                n_status: int = -1
 
         Menu.Download.download_status(cur_item=cur_item, total_items=total_items, downloaded=downloaded,
                                       total=total, dwn_percent=dwn_percent, status=n_status, title=title)
@@ -427,32 +470,34 @@ class Backend:
             if self.item_count == 1:
                 # Single Item
 
-                if self.filename_format == 1:
-                    # (uploader) - (title).(ext)
-                    self.download_path = f"{self.download_dir}{uploaders[i]} - {titles[i]}.{self.file_ext}"
+                match self.filename_format:
+                    case 1:
+                        # (uploader) - (title).(ext)
+                        self.download_path = f"{self.download_dir}{uploaders[i]} - {titles[i]}.{self.file_ext}"
 
-                elif self.filename_format == 2:
-                    # (title).(ext)
-                    self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
+                    case 2:
+                        # (title).(ext)
+                        self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
 
             elif self.item_count == 2:
                 # Playlist
 
-                if self.filename_format == 1:
-                    # (uploader) - (title).(ext)
-                    self.download_path = f"{self.download_dir}{uploaders[i]} - {titles[i]}.{self.file_ext}"
+                match self.filename_format:
+                    case 1:
+                        # (uploader) - (title).(ext)
+                        self.download_path = f"{self.download_dir}{uploaders[i]} - {titles[i]}.{self.file_ext}"
 
-                elif self.filename_format == 2:
-                    # (title).(ext)
-                    self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
+                    case 2:
+                        # (title).(ext)
+                        self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
 
-                elif self.filename_format == 3:
-                    # (item #) - (uploader) - (title).(ext)
-                    self.download_path = f"{self.download_dir}{cur_item} - {uploaders[i]} - {titles[i]}.{self.file_ext}"
+                    case 3:
+                        # (item #) - (uploader) - (title).(ext)
+                        self.download_path = f"{self.download_dir}{cur_item} - {uploaders[i]} - {titles[i]}.{self.file_ext}"
 
-                elif self.filename_format == 4:
-                    # (item #) - (title).(ext)
-                    self.download_path = f"{self.download_dir}{cur_item} - {titles[i]}.{self.file_ext}"
+                    case 4:
+                        # (item #) - (title).(ext)
+                        self.download_path = f"{self.download_dir}{cur_item} - {titles[i]}.{self.file_ext}"
 
     def convert_images(self, titles: list[str]):
         """
@@ -499,7 +544,7 @@ class Backend:
         :return:
         """
 
-        Menu.Download.processing_url()
+        Menu.Download.processing_download()
 
         # Get number of items
         self.num_items: int = Downloader.get_title_count(self.yt_url)
@@ -553,13 +598,15 @@ class Backend:
             self.failed_downloads.append(self.titles_safe[cur_item])
 
         # Get download size. Use different path based on download type
-        if self.item_count == 1:
-            # Single item
-            self.dwn_size: str = Downloader.get_download_size(path=self.download_path, unit="auto")
+        match self.item_count:
+            case 1:
+                # Single item
+                self.dwn_size: str = Downloader.get_download_size(path=self.download_path, unit="auto")
 
-        elif self.item_count == 2:
-            # Playlist
-            self.dwn_size: str = Downloader.get_download_size(path=self.download_dir + self.playlist_name, unit="auto")
+            case 2:
+                # Playlist
+                self.dwn_size: str = Downloader.get_download_size(path=self.download_dir + self.playlist_name,
+                                                                  unit="auto")
 
         Menu.Download.all_downloads_complete(completed=self.num_items, total=self.num_items,
                                              path_dir=self.download_dir, size=self.dwn_size)

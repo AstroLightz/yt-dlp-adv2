@@ -3,10 +3,47 @@ confighandler.py: Handles the config file for the script
 """
 
 import os
+from pathlib import PurePosixPath
 
 from ruamel.yaml import YAML
 
 from menu import Menu
+
+
+class ConfigError(Exception):
+    def __init__(self, err_code: int, msg: str):
+        """
+        Error in the configuration file
+        :param err_code: Error code
+        :param msg: Error message
+
+        Error codes:
+            - ``1`` = Empty value
+            - ``2`` = Invalid value
+            - ``3`` = Invalid path
+            - ``4`` = Duplicate key
+            - ``5`` = Malformed Config file
+        """
+        self.err_code = err_code
+        self.msg = None
+
+        # Default messages if not provided
+        if not msg:
+            if err_code == 1:
+                # Empty value
+                msg = "Empty value"
+
+            elif err_code == 2:
+                # Invalid value
+                msg = "Invalid value"
+
+            elif err_code == 3:
+                # Invalid path
+                msg = "Invalid path"
+
+        self.msg = f"Error Code {err_code}: {msg}"
+
+        super().__init__(self.msg)
 
 
 class ConfigHandler:
@@ -45,6 +82,7 @@ class ConfigHandler:
                 f.write("")
 
             self.set_defaults()
+            Menu.Config.created_config(config_path=self.config_path)
 
         else:
             self.parse_config()
@@ -119,6 +157,120 @@ class ConfigHandler:
             self.yaml.dump(self.config_vals, stream=f)
 
 
+class ConfigValidator:
+    """
+    Class for validating the config file at launch
+    """
+
+    def __init__(self, config_handler: ConfigHandler):
+        self.ch: ConfigHandler = config_handler
+        self.config_vals = self.ch.get_config()
+
+        self.config_errors: list[ConfigError] = []
+
+        # Preferences that use paths
+        self.path_prefs: list[str] = [
+            "video_directory",
+            "audio_directory",
+            "artwork_directory"
+        ]
+
+        self.validate_config()
+
+    def validate_config(self):
+        """
+        Validate the config
+        """
+
+        default_vals: list = list(self.ch.default_vals.values())
+
+        # If not a dict, raise error
+        if not isinstance(self.config_vals, dict):
+            err: ConfigError = ConfigError(err_code=5, msg="Malformed config file.")
+            self.config_errors.append(err)
+
+            return
+
+        for i, (key, value) in enumerate(self.config_vals.items()):
+            if key not in list(self.ch.default_vals.keys()):
+                # Unknown key
+
+                err: ConfigError = ConfigError(err_code=4, msg=f"Unknown key '{key}'")
+                self.config_errors.append(err)
+
+            if value is None:
+                # Value is None
+
+                err: ConfigError = ConfigError(err_code=1, msg=f"'{key}': Value cannot be empty or null.")
+                self.config_errors.append(err)
+
+            if not isinstance(value, type(default_vals[i])):
+                # Type does not match
+
+                err: ConfigError = ConfigError(err_code=2,
+                                               msg=f"'{key}': Value must be type '{type(default_vals[i]).__name__}'"
+                                                   f"\n      Current value: '{value}'"
+                                                   f"\n      Current type: '{type(value).__name__}'")
+                self.config_errors.append(err)
+
+            if isinstance(value, str) and key in self.path_prefs:
+                # Validate path
+
+                self.validate_path(key=key, value=value)
+
+    def validate_path(self, key: str, value: str):
+        """
+        Validate any preferences that are paths
+        """
+
+        if key in self.path_prefs:
+            # Ensure path is valid
+
+            # Ensure path is Unix-based
+            try:
+                posix_path: PurePosixPath = PurePosixPath(value)
+
+            except Exception as e:
+                err: ConfigError = ConfigError(err_code=2, msg=f"'{key}': Path error: {e}")
+                self.config_errors.append(err)
+
+                return
+
+            if not isinstance(value, str) or not value:
+                # Empty path
+
+                err: ConfigError = ConfigError(err_code=1, msg=f"'{key}': Path cannot be empty")
+                self.config_errors.append(err)
+
+                return
+
+            if "\0" in value:
+                # No null characters allowed
+
+                err: ConfigError = ConfigError(err_code=2, msg=f"'{key}': Path cannot contain null characters")
+                self.config_errors.append(err)
+
+            if value[0] != '/' and value[0] != '~':
+                # No relative paths allowed
+
+                err: ConfigError = ConfigError(err_code=3,
+                                               msg=f"'{key}': Path must be valid and absolute: "
+                                                   f"Must begin with / or ~"
+                                                   f"\n      Current path: '{value}'")
+                self.config_errors.append(err)
+
+            # Path can contain periods if it ends with a '/'
+            if posix_path.name and not value.endswith('/') and posix_path.suffix:
+                # Path is a file
+
+                err: ConfigError = ConfigError(err_code=3,
+                                               msg=f"'{key}': Path cannot be a file"
+                                                   f"\n      If this was intended to be a directory, "
+                                                   f"Add a '/' to the end of the path"
+                                                   f"\n      Current path: '{value}'")
+                self.config_errors.append(err)
+
+
 class ConfigEditor:
     """
     Backend for editing the config in the script
@@ -127,7 +279,12 @@ class ConfigEditor:
     def __init__(self):
         self.ch: ConfigHandler = ConfigHandler(file="config.yml")
 
+        # Validate config
+        self.errors: list[ConfigError] = ConfigValidator(config_handler=self.ch).config_errors
+
         self.launch_downloader: bool = False
+
+        self.menu_options: list = [1, 2, 3, 4, 5, 'S', 'Q']
 
         # Config
         self.cur_prefs: dict = self.ch.get_config()
@@ -145,35 +302,59 @@ class ConfigEditor:
         # Header is only shown once
         Menu.Config.config_header(config_path=self.ch.config_path)
 
+        # Display errors if any
+        if len(self.errors) > 0:
+            Menu.Problem.Warning.config_problems(e=self.errors)
+
+        else:
+            Menu.gap(2)
+
         # Menu loop
         while True:
-            self.main_menu()
 
-            if self.menu_choice == '1':
-                # View Config
-                self.view_config()
-
-            elif self.menu_choice == '2':
-                # Edit Config
-                self.edit_config()
-
-            elif self.menu_choice == '3':
-                # Reset Config
+            # Force reset the config file if it is malformed
+            if len(self.errors) > 0 and self.errors[0].err_code == 5:
+                Menu.Problem.Warning.config_force_reset()
                 self.reset_config()
 
-            elif self.menu_choice == '4':
-                # View Config Path
-                Menu.Config.view_config_path(path=self.ch.config_path)
+            else:
+                self.main_menu()
 
-            elif self.menu_choice == 'S':
-                # Run the Downloader
-                self.launch_downloader = True
-                return
+                match self.menu_choice:
+                    case '1':
+                        # View Config
+                        self.view_config()
 
-            elif self.menu_choice == 'Q':
-                # Exit
-                Menu.Misc.exit_script()
-                exit(0)
+                    case '2':
+                        # Edit Config
+                        self.edit_config()
+
+                    case '3':
+                        # Reset Config
+                        self.reset_config()
+
+                    case '4':
+                        # View Config Path
+                        Menu.Config.view_config_path(path=self.ch.config_path)
+
+                    case '5':
+                        # View Config Problems
+
+                        if len(self.errors) > 0:
+                            Menu.Problem.Warning.config_problems(e=self.errors)
+
+                        else:
+                            Menu.Problem.Success.config_no_problems()
+
+                    case 'S':
+                        # Run the Downloader
+                        self.launch_downloader = True
+                        return
+
+                    case 'Q':
+                        # Exit
+                        Menu.Misc.exit_script()
+                        exit(0)
 
     def main_menu(self):
         Menu.gap(1)
@@ -182,7 +363,7 @@ class ConfigEditor:
 
         # Get main menu choice
         # self.menu_choice: int = Menu.Input.get_input_num(num_entries=4, default_option=1)
-        self.menu_choice: str = Menu.Input.get_input_custom(opt_range=[1, 2, 3, 4, 'S', 'Q'], default_option=1)
+        self.menu_choice: str = Menu.Input.get_input_custom(opt_range=self.menu_options, default_option=1)
 
     def view_config(self):
         Menu.Config.view_config(config=self.cur_prefs, config_path=self.ch.config_path)
@@ -201,12 +382,13 @@ class ConfigEditor:
                 # Get preference and value
                 pref_key = list(self.cur_prefs.keys())[self.p_choice - 1]
                 pref_val = self.cur_prefs[pref_key]
+                def_val = list(self.ch.default_vals.values())[self.p_choice - 1]
 
-                Menu.Config.preference_change(p_key=pref_key, p_value=pref_val, p_type=type(pref_val))
+                Menu.Config.preference_change(p_key=pref_key, p_value=pref_val, p_type=type(def_val))
                 Menu.gap(1)
 
                 # Get new value
-                self.p_new_value = Menu.Input.get_input_pref_value(p_key=pref_key, p_value=pref_val)
+                self.p_new_value = Menu.Input.get_input_pref_value(p_key=pref_key, p_value=pref_val, d_value=def_val)
 
                 # Add to changes dict
                 self.new_prefs[pref_key] = self.p_new_value
@@ -221,6 +403,9 @@ class ConfigEditor:
                     self.cur_prefs[key] = value
 
                 self.new_prefs = {}
+
+                # Check for errors
+                self.errors = ConfigValidator(config_handler=self.ch).config_errors
 
                 Menu.Config.preferences_saved(config_path=self.ch.config_path)
                 break
@@ -253,15 +438,23 @@ class ConfigEditor:
             Menu.Problem.Error.pref_already_default()
             return
 
-        Menu.Config.reset_defaults(config=self.cur_prefs, defaults=self.ch.default_vals)
+        # Skip confirmation if config file is deformed
+        if len(self.errors) > 0 and self.errors[0].err_code == 5:
+            self.reset_confirm = True
 
-        # Get confirmation
-        self.reset_confirm = Menu.Input.get_input_bool(default_option=False)
+        else:
+            Menu.Config.reset_defaults(config=self.cur_prefs, defaults=self.ch.default_vals)
+
+            # Get confirmation
+            self.reset_confirm = Menu.Input.get_input_bool(default_option=False)
 
         # If confirmed, reset config
         if self.reset_confirm:
             self.ch.set_defaults()
             self.cur_prefs = self.ch.get_config()
+
+            # Check for errors
+            self.errors = ConfigValidator(config_handler=self.ch).config_errors
 
             Menu.Config.preferences_reset()
 

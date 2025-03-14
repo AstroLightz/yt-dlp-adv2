@@ -20,15 +20,19 @@ from menu import Menu
 from utilities import Utilities
 
 
+# Arguments
+_BYPASS_DEFAULTS: bool = False
+
 def handle_args() -> int:
     """
     Handle any arguments passed to the script
     :return: 0 If no arguments are passed, 1 if program should exit, 2 otherwise.
     """
 
-    # h - help, v - version
-    options: str = "hvc"
-    long_options: list[str] = ["help", "version", "config"]
+    global _BYPASS_DEFAULTS
+
+    options: str = "hvcB"
+    long_options: list[str] = ["help", "version", "config", "bypass-defaults"]
 
     # Get command line arguments
     cmd_args: list = sys.argv[1:]
@@ -58,6 +62,11 @@ def handle_args() -> int:
 
                 return 1
 
+            elif arg in ("-B", "--bypass-defaults") and num_args == 1:
+                # Bypass default preferences
+                _BYPASS_DEFAULTS = True
+                return 2
+
             else:
                 # Assume too many arguments
                 Menu.Problem.Error.error_msg(error=Exception(f"Too many arguments: Expected 1, but got {num_args}."))
@@ -66,7 +75,7 @@ def handle_args() -> int:
         return 0
 
     except getopt.error as e:
-        Menu.Problem.Error.error_msg(error=Exception(f"{e}. Try 'yt-dlp-adv2 --help' for more information."))
+        Menu.Problem.Error.error_msg(error=Exception(f"{e}. Try 'main.py --help' for more information."))
         return 1
 
 
@@ -75,7 +84,7 @@ if __name__ == "__main__":
 
         # Don't execute the program if requested
         if handle_args() != 1:
-            Backend()
+            Backend(bypass_defaults=_BYPASS_DEFAULTS)
 
     # Handle abrupt exits, such as CTRL+C or CTRL+D
     except (KeyboardInterrupt, EOFError):

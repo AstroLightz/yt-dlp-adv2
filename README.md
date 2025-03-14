@@ -9,6 +9,8 @@ This Script utilizes <b>[yt-dlp](https://github.com/yt-dlp/yt-dlp)</b> for downl
 
 - [Requirements](#requirements)
 - [Installation](#installation)
+  - [Automatic Installation (Experimental)](#automatic-installation-experimental)
+  - [Manual Installation](#manual-installation)
 - [Usage](#usage)
 - [Features](#features)
 - [Screenshots](#screenshots)
@@ -27,7 +29,24 @@ This Script utilizes <b>[yt-dlp](https://github.com/yt-dlp/yt-dlp)</b> for downl
 
 ## Installation:
 
-To install the program, run the following command in your terminal:
+### Automatic Installation (Experimental)
+
+Install yt-dlp-adv2 using one of the following commands:
+
+| Method   | Command                                                                                               |
+|:---------|:------------------------------------------------------------------------------------------------------|
+| **curl** | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/AstroLightz/yt-dlp-adv2/master/install.sh)"` |
+| **wget** | `bash -c "$(wget -O- https://raw.githubusercontent.com/AstroLightz/yt-dlp-adv2/master/install.sh)"`   |
+
+The installation script can add an alias to your bashrc/zshrc file to execute yt-dlp-adv2:
+
+```shell
+alias yt-dlp-adv="\"/Install/Location/yt-dlp-adv/.venv/bin/python\" \"/Install/Location/yt-dlp-adv/main.py\""
+```
+
+### Manual Installation
+
+To install the program manually, run the following command in your terminal:
 
 ```shell
 git clone https://github.com/AstroLightz/yt-dlp-adv2.git

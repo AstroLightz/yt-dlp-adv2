@@ -13,4 +13,5 @@
 
 ### CHANGE
 - Clean up README and add a logo
+- Update screenshots in README with new UI
 - Improve Download status for Artwork. Show a Download status for total download since individual status is not available

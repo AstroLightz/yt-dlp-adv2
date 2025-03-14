@@ -75,45 +75,50 @@ class Downloader:
             size_b = Path(path).stat().st_size
 
         # Convert bytes to desired unit
-        if unit.upper() == "KB" or unit.upper() == "K":
-            # Kilobytes
-            size: float = size_b / 1024
-            return f"{size:.2f} KB"
-
-        elif unit.upper() == "MB" or unit.upper() == "M":
-            # Megabytes
-            size: float = size_b / (1024 * 1024)
-            return f"{size:.2f} MB"
-
-        elif unit.upper() == "GB" or unit.upper() == "G":
-            # Gigabytes
-            size: float = size_b / (1024 * 1024 * 1024)
-            return f"{size:.2f} GB"
-
-        elif unit.upper() == "AUTO":
-            # Auto: Determine unit automatically
-            if size_b < 1024:
-                # Less than 1 KB
-                size: float = size_b
-                return f"{size:.2f} B"
-
-            elif size_b < (1024 ** 2):
-                # Less than 1 MB
+        match unit.upper():
+            case "KB" | "K":
+                # Kilobytes
                 size: float = size_b / 1024
                 return f"{size:.2f} KB"
 
-            elif size_b < (1024 ** 3):
-                # Less than 1 GB
-                size: float = size_b / (1024 ** 2)
+            case "MB" | "M":
+                # Megabytes
+                size: float = size_b / (1024 * 1024)
                 return f"{size:.2f} MB"
 
-            else:
-                # Greater than 1 GB
-                size: float = size_b / (1024 ** 3)
+            case "GB" | "G":
+                # Gigabytes
+                size: float = size_b / (1024 * 1024 * 1024)
                 return f"{size:.2f} GB"
 
-        else:
-            return ""
+            case "AUTO":
+                # Auto: Determine unit automatically
+                if size_b < 1024:
+                    # Less than 1 KB
+
+                    size: float = size_b
+                    return f"{size:.2f} B"
+
+                elif size_b < (1024 ** 2):
+                    # Less than 1 MB
+
+                    size: float = size_b / 1024
+                    return f"{size:.2f} KB"
+
+                elif size_b < (1024 ** 3):
+                    # Less than 1 GB
+
+                    size: float = size_b / (1024 ** 2)
+                    return f"{size:.2f} MB"
+
+                else:
+                    # Greater than 1 GB
+
+                    size: float = size_b / (1024 ** 3)
+                    return f"{size:.2f} GB"
+
+            case _:
+                return ""
 
     @staticmethod
     def get_playlist_name(url: str) -> str:
@@ -186,48 +191,50 @@ class Downloader:
                 ytdlp_format: str = f"{ytdlp_qualities[video_quality]}+bestaudio"
 
             # Video
-            if file_format == 1:
-                ytdlp_options["format"] = ytdlp_format
-                ytdlp_options["merge_output_format"] = "mp4"
+            match file_format:
+                case 1:
+                    ytdlp_options["format"] = ytdlp_format
+                    ytdlp_options["merge_output_format"] = "mp4"
 
-            elif file_format == 2:
-                ytdlp_options["format"] = ytdlp_format
-                ytdlp_options["merge_output_format"] = "mkv"
+                case 2:
+                    ytdlp_options["format"] = ytdlp_format
+                    ytdlp_options["merge_output_format"] = "mkv"
 
-            elif file_format == 3:
-                ytdlp_options["format"] = ytdlp_format
-                ytdlp_options["merge_output_format"] = "webm"
+                case 3:
+                    ytdlp_options["format"] = ytdlp_format
+                    ytdlp_options["merge_output_format"] = "webm"
 
         elif dwn_type == 2:
 
             # Audio
-            if file_format == 1:
-                ytdlp_options["postprocessors"] = [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "0",
-                }]
+            match file_format:
+                case 1:
+                    ytdlp_options["postprocessors"] = [{
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "mp3",
+                        "preferredquality": "0",
+                    }]
 
-            elif file_format == 2:
-                ytdlp_options["postprocessors"] = [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "vorbis",
-                    "preferredquality": "0",
-                }]
+                case 2:
+                    ytdlp_options["postprocessors"] = [{
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "vorbis",
+                        "preferredquality": "0",
+                    }]
 
-            elif file_format == 3:
-                ytdlp_options["postprocessors"] = [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "wav",
-                    "preferredquality": "0",
-                }]
+                case 3:
+                    ytdlp_options["postprocessors"] = [{
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "wav",
+                        "preferredquality": "0",
+                    }]
 
-            elif file_format == 4:
-                ytdlp_options["postprocessors"] = [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "flac",
-                    "preferredquality": "0",
-                }]
+                case 4:
+                    ytdlp_options["postprocessors"] = [{
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "flac",
+                        "preferredquality": "0",
+                    }]
 
         elif dwn_type == 3:
 
@@ -243,32 +250,34 @@ class Downloader:
         if item_count == 1:
 
             # (uploader) - (title).(ext)
-            if filename_format == 1 and dwn_type != 3:
-                ytdlp_options["outtmpl"] = f"{dwn_dir}%(uploader)s - %(title)s.%(ext)s"
+            match filename_format:
+                case 1 if dwn_type != 3:
+                    ytdlp_options["outtmpl"] = f"{dwn_dir}%(uploader)s - %(title)s.%(ext)s"
 
-            # (title).(ext)
-            elif filename_format == 2:
-                ytdlp_options["outtmpl"] = f"{dwn_dir}%(title)s.%(ext)s"
+                # (title).(ext)
+                case 2:
+                    ytdlp_options["outtmpl"] = f"{dwn_dir}%(title)s.%(ext)s"
 
         # Playlist
         elif item_count == 2:
 
             # (uploader) - (title).(ext)
-            if filename_format == 1 and dwn_type != 3:
-                ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(uploader)s - %(title)s.%(ext)s"
+            match filename_format:
+                case 1 if dwn_type != 3:
+                    ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(uploader)s - %(title)s.%(ext)s"
 
-            # (title).(ext)
-            elif filename_format == 2:
-                ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(title)s.%(ext)s"
+                # (title).(ext)
+                case 2:
+                    ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(title)s.%(ext)s"
 
-            # (item #) - (uploader) - (title).(ext)
-            elif filename_format == 3:
-                ytdlp_options[
-                    "outtmpl"] = f"{dwn_dir}{playlist_name}/%(playlist_index)s - %(uploader)s - %(title)s.%(ext)s"
+                # (item #) - (uploader) - (title).(ext)
+                case 3:
+                    ytdlp_options[
+                        "outtmpl"] = f"{dwn_dir}{playlist_name}/%(playlist_index)s - %(uploader)s - %(title)s.%(ext)s"
 
-            # (item #) - (title).(ext)
-            elif filename_format == 4:
-                ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(playlist_index)s - %(title)s.%(ext)s"
+                # (item #) - (title).(ext)
+                case 4:
+                    ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(playlist_index)s - %(title)s.%(ext)s"
 
         return ytdlp_options
 
@@ -354,32 +363,34 @@ class Downloader:
             if item_count == 1:
                 # Single Items
 
-                if filename_format == 1:
-                    # Uploader - Title
-                    title = f"{uploaders[0]} - {titles[0]}"
+                match filename_format:
+                    case 1:
+                        # Uploader - Title
+                        title = f"{uploaders[0]} - {titles[0]}"
 
-                elif filename_format == 2:
-                    # Title
-                    title = f"{titles[0]}"
+                    case 2:
+                        # Title
+                        title = f"{titles[0]}"
 
             elif item_count == 2:
                 # Playlist
 
-                if filename_format == 1:
-                    # Uploader - Title
-                    title = f"{uploaders[cur_item - 1]} - {titles[cur_item - 1]}"
+                match filename_format:
+                    case 1:
+                        # Uploader - Title
+                        title = f"{uploaders[cur_item - 1]} - {titles[cur_item - 1]}"
 
-                elif filename_format == 2:
-                    # Title
-                    title = f"{titles[cur_item - 1]}"
+                    case 2:
+                        # Title
+                        title = f"{titles[cur_item - 1]}"
 
-                elif filename_format == 3:
-                    # Item # - Uploader - Title
-                    title = f"{cur_item} - {uploaders[cur_item - 1]} - {titles[cur_item - 1]}"
+                    case 3:
+                        # Item # - Uploader - Title
+                        title = f"{cur_item} - {uploaders[cur_item - 1]} - {titles[cur_item - 1]}"
 
-                elif filename_format == 4:
-                    # Item # - Title
-                    title = f"{cur_item} - {titles[cur_item - 1]}"
+                    case 4:
+                        # Item # - Title
+                        title = f"{cur_item} - {titles[cur_item - 1]}"
 
             # Get values if downloading
             if status == "downloading" or status == "finished":

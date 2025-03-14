@@ -9,7 +9,7 @@ class Utilities:
     Static class that contains utility functions not necessarily related yt-dlp
     """
 
-    VERSION: str = "1.7.0"
+    VERSION: str = "1.8.0"
     COMMITS_LINK: str = "https://github.com/AstroLightz/yt-dlp-adv2/commits/master/"
 
     @staticmethod
@@ -74,6 +74,20 @@ class Utilities:
         else:
             return p_value
 
+    @staticmethod
+    def is_allowed_url(url: str, allowed_urls: list[str]) -> bool:
+        """
+        Checks if a URL is an allowed url in a list
+        :param url: URL
+        :param allowed_urls: List of allowed URLs
+        :return: True if the URL is allowed, False otherwise
+        """
+
+        # Get the domain of the URL
+        domain: str = url.split("/")[2]
+
+        return domain in allowed_urls
+
     ## CONFIRMATION SCREEN ##
 
     DOWNLOAD_TYPES: dict[int, str] = {
@@ -135,12 +149,15 @@ class Utilities:
         """
 
         # Key/values for each option
-        if dwn_type == 1:
-            return Utilities.FILE_FORMATS["file_format_vid"][file_format]
-        elif dwn_type == 2:
-            return Utilities.FILE_FORMATS["file_format_aud"][file_format]
-        else:
-            return Utilities.FILE_FORMATS["file_format_art"][file_format]
+        match dwn_type:
+            case 1:
+                return Utilities.FILE_FORMATS["file_format_vid"][file_format]
+
+            case 2:
+                return Utilities.FILE_FORMATS["file_format_aud"][file_format]
+
+            case _:
+                return Utilities.FILE_FORMATS["file_format_art"][file_format]
 
     @staticmethod
     def get_download_mode(item_count: int) -> str:
