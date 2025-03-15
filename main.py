@@ -20,9 +20,9 @@ from filenamecreator import FilenameCreator
 from menu import Menu
 from utilities import Utilities
 
-
 # Arguments
 _BYPASS_DEFAULTS: bool = False
+
 
 def handle_args() -> int:
     """
@@ -33,7 +33,7 @@ def handle_args() -> int:
     global _BYPASS_DEFAULTS
 
     options: str = "hvcfB"
-    long_options: list[str] = ["help", "version", "config",  "filename-creator", "bypass-defaults"]
+    long_options: list[str] = ["help", "version", "config", "filename-creator", "bypass-defaults"]
 
     # Get command line arguments
     cmd_args: list = sys.argv[1:]
@@ -66,6 +66,8 @@ def handle_args() -> int:
             elif arg in ("-f", "--filename-creator") and num_args == 1:
                 # Open the Filename Creator
                 FilenameCreator()
+
+                return 1
 
             elif arg in ("-B", "--bypass-defaults") and num_args == 1:
                 # Bypass default preferences

@@ -152,11 +152,21 @@ class Backend:
         # Item Count
         self.menu_item_count()
 
-        # Filename Format. Default to (title).(ext) for artwork
-        if self.dwn_type == 3:
-            self.ff_preset: int = 2
+        # Filename Format.
+        default_format = self.CONFIG["default_filename_format"]["single" if self.item_count == 1 else "playlist"]
+        if self.bypass_defaults or not default_format[0]:
+            # Default to (title).(ext) for artwork
+
+            if self.dwn_type == 3:
+                self.ff_preset: int = 2
+
+            else:
+                self.menu_filename_format()
         else:
-            self.menu_filename_format()
+            # Use default if present
+
+            self.filename_format: list[str] = list(default_format)
+            Menu.FilenameFormat.default_format(default_format=self.filename_format[0])
 
         # URL
         self.menu_get_url()
@@ -574,8 +584,6 @@ class Backend:
         for key, value in self.extracted_info.items():
             self.sanitized_info[key] = Utilities.sanitize_list(unclean_list=value)
 
-        # TODO: Change this so not having a title could cause an error
-
         if "title" in list(self.extracted_info.keys()):
             self.titles: list[str] = self.extracted_info["title"]
             self.titles_safe: list[str] = self.sanitized_info["title"]
@@ -583,6 +591,12 @@ class Backend:
         if "uploader" in list(self.extracted_info.keys()):
             self.uploaders: list[str] = self.extracted_info["uploader"]
             self.uploaders_safe: list[str] = self.sanitized_info["uploader"]
+
+        if not self.titles and not self.uploaders:
+            # Fallback to video ID if no titles or uploaders
+
+            self.titles: list[str] = Downloader.get_video_id(url=self.yt_url)
+            self.titles_safe: list[str] = Utilities.sanitize_list(unclean_list=self.titles)
 
         # If a playlist, get the playlist name
         if self.item_count == 2:

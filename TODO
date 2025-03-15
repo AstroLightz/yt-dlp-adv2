@@ -17,13 +17,16 @@
 
 
 ### BRANCH
+
+#### HIGH PRIORITY
+- Improve default filename format display in Config Editor
 - Implement Filename Creator
-    3. Confirm
     4. Advanced Mode
         i. Validate yt-dlp filename format contains valid parts
 
-- Add preference in config for default filename format
+#### MEDIUM PRIORITY
+- Update ConfigValidator to handle default filename format preference errors
+
+#### LOW PRIORITY
 - Add preference in config for showing full title in download status (How it was previously): status_title_only. Default to true
-- Add messages throughout FC for better user experience
-- Add prompt for setting which Download Mode to use when using FC through argument
-- Improve display for certain parts of FC. e.g. empty strings -> "None"
+- Update ConfigEditor to use FC when editing default filename format preference

@@ -1,8 +1,8 @@
+import re
 from pathlib import Path
 from typing import Any
 
 import yt_dlp as yt
-import re
 
 
 class Utilities:
@@ -95,7 +95,7 @@ class Utilities:
         ],
 
         "(video id)": [
-            "{video_id}",
+            "{id}",
             "%(id)s"
         ]
     }
@@ -112,12 +112,12 @@ class Utilities:
         ],
 
         "(item #)": [
-            "{item_num}",
+            "{playlist_index}",
             "%(playlist_index)s"
         ],
 
         "(playlist name)": [
-            "{playlist_name}",
+            "{playlist}",
             "%(playlist)s"
         ],
 

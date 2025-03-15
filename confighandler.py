@@ -370,6 +370,8 @@ class ConfigEditor:
         Menu.Config.view_config(config=self.cur_prefs, config_path=self.ch.config_path)
 
     def edit_config(self):
+        from filenamecreator import FilenameCreator
+
         while True:
             Menu.Config.preference_menu(config=self.cur_prefs, changes=self.new_prefs)
             Menu.gap(1)
@@ -384,6 +386,15 @@ class ConfigEditor:
                 pref_key = list(self.cur_prefs.keys())[self.p_choice - 1]
                 pref_val = self.cur_prefs[pref_key]
                 def_val = list(self.ch.default_vals.values())[self.p_choice - 1]
+
+                # Use Filename Creator if editing default filename format
+                if pref_key == "default_filename_format":
+                    FilenameCreator()
+
+                    # Reload preferences
+                    self.ch = ConfigHandler(file=Utilities.CONFIG_FILENAME)
+                    self.cur_prefs = self.ch.get_config()
+                    break
 
                 Menu.Config.preference_change(p_key=pref_key, p_value=pref_val, p_type=type(def_val))
                 Menu.gap(1)

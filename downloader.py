@@ -140,6 +140,29 @@ class Downloader:
                 return ""
 
     @staticmethod
+    def get_video_id(url: str) -> list[str]:
+        """
+        Get video id
+        :param url: YouTube URL
+        :return: string ID
+        """
+        ydl_args = {
+            "logger": Downloader.QuietLogger(),
+            "extract_flat": True,
+            "force_generic_extractor": False,
+            "quiet": True,
+        }
+
+        with yt.YoutubeDL(ydl_args) as ydl:
+            try:
+                video = ydl.extract_info(url, download=False)
+                return [video["id"]]
+
+            except Exception as e:
+                print(f"Error: {e}")
+                return []
+
+    @staticmethod
     def setup_ytdlp_options(dwn_type: int, file_format: int, item_count: int, dwn_dir: str, ff_mode: int,
                             filename_format: list[str], playlist_name: str, video_quality: str) -> dict:
         """

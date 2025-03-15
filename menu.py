@@ -95,13 +95,19 @@ class Menu:
                 # Remove underscores and capitalize first letter
                 t_key = key.replace("_", " ").title()
 
-                print(
-                    f"  {col(str(i + 1), 'cyan')}) {t_key}: "
-                    f"{col(Utilities.pref_display_value(p_value=value), "magenta")} ",
-                    end="")
+                # For default filename format, show custom message
+                if key == "default_filename_format":
+                    print(f"  {col(str(i + 1), 'cyan')}) {t_key}: "
+                          f"{col("Edit with Filename Creator", "yellow")} ", end="")
+
+                else:
+                    print(
+                        f"  {col(str(i + 1), 'cyan')}) {t_key}: "
+                        f"{col(Utilities.pref_display_value(p_value=value), "magenta")} ",
+                        end="")
 
                 # Print any pending changes
-                if key in changes.keys():
+                if key in changes.keys() and key != "default_filename_format":
                     print(col(f"[{"None" if not isinstance(changes[key], bool) and \
                                             not changes[key] else changes[key]}]", "yellow"), end="")
 
@@ -273,7 +279,7 @@ class Menu:
         @staticmethod
         def get_input_custom(opt_range: list[int | str], default_option: int | str = 1,
                              no_default: bool = False, list_options: bool = True,
-                             dynamic_options: bool = False, invalid_opts: list[int | str] = None) -> str:
+                             dynamic_options: bool = False) -> str:
             """
             Custom Input system. Provide the options range and (optionally) the default option
             :param opt_range: List of integers representing the options. Order in the list will be used in display.
@@ -282,7 +288,6 @@ class Menu:
             :param list_options: If True, list available options
             :param dynamic_options: If True, uses the length of the options range to display options. Otherwise,
             uses the options list directly
-            :param invalid_opts: List of invalid options, if any
             :return: The selected option
             """
 
@@ -294,14 +299,10 @@ class Menu:
                 options_list: str = '['
 
                 for opt in opt_range:
-                    if invalid_opts and str(opt) in [str(opt) for opt in invalid_opts]:
-                        continue
-
+                    if opt != opt_range[-1]:
+                        options_list += f"{opt}/"
                     else:
-                        if opt != opt_range[-1]:
-                            options_list += f"{opt}/"
-                        else:
-                            options_list += f"{opt}"
+                        options_list += f"{opt}"
 
                 options_list += "]"
                 max_entries_str = options_list[-1]
@@ -335,39 +336,28 @@ class Menu:
                                                opt_range]:
                             raise ValueError
 
-                        # Handle invalid
-                        elif invalid_opts and int(choice) in invalid_opts:
-                            raise ValueError
-
                     else:
                         if choice.upper() not in [opt.upper() if isinstance(opt, str) else opt for opt in opt_range]:
-                            raise ValueError
-
-                        # Handle invalid
-                        elif invalid_opts and choice.upper() in invalid_opts:
                             raise ValueError
 
                     return choice.upper() if choice.isalpha() else choice
 
                 except ValueError:
-                        if invalid_opts:
-                            print(f"\n{FAIL} {col("Option is unavailable. Please try again.", "red")}")
+                    if dynamic_options and len(opt_range) > 10:
+                        print(
+                            f"\n{FAIL} {col(f"Invalid input. Please enter an integer or letter between 1-0 and "
+                                            f"{f"A-{max_entries_str}" if len(opt_range) > 11 else \
+                                                max_entries_str}.", "red")}")
 
-                        elif dynamic_options and len(opt_range) > 10:
-                            print(
-                                f"\n{FAIL} {col(f"Invalid input. Please enter an integer or letter between 1-0 and "
-                                                f"{f"A-{max_entries_str}" if len(opt_range) > 11 else \
-                                                    max_entries_str}.", "red")}")
+                    elif dynamic_options:
+                        print(
+                            f"\n{FAIL} {col(f"Invalid input. Please enter an integer between 1 and {"0" \
+                                if len(opt_range) > 9 else len(opt_range)}.", "red")}")
 
-                        elif dynamic_options:
-                            print(
-                                f"\n{FAIL} {col(f"Invalid input. Please enter an integer between 1 and {"0" \
-                                    if len(opt_range) > 9 else len(opt_range)}.", "red")}")
-
-                        else:
-                            print(
-                                f"\n{FAIL} {col(f"Invalid input. Please enter a valid option: "
-                                                f"{opt_range}", "red")}")
+                    else:
+                        print(
+                            f"\n{FAIL} {col(f"Invalid input. Please enter a valid option: "
+                                            f"{opt_range}", "red")}")
 
         @staticmethod
         def get_input_pref_value(p_key: str, p_value: Any, d_value: Any) -> Any:
@@ -819,6 +809,14 @@ class Menu:
             print(f"  {col('1', "cyan")}) Presets")
             print(f"  {col('2', "cyan")}) Custom")
 
+        @staticmethod
+        def default_format(default_format: str) -> None:
+            """
+            Message to display in Downloader when using a default format
+            :param default_format: Default filename format
+            """
+            print(f"\n{INFO} Using default filename format: {col(f"\'{default_format}\'", "cyan")}")
+
         class Presets:
             """
             Filename format preset menus/messages
@@ -841,18 +839,22 @@ class Menu:
             """
 
             @staticmethod
-            def fc_header(default_format: str = "") -> None:
+            def fc_header(dwn_mode: int, default_format: str = "") -> None:
                 """
                 Display header for Filename Creator
+                :param dwn_mode: Download mode
                 :param default_format: Default filename format if it exists
                 """
                 print(f"\n{col('●', "red")} Welcome to the {col("Filename Creator", "red")}!")
                 print(f"{col('●', "magenta")} Construct your own filename format for you downloads.")
 
+                print(f"{col('●', "yellow")} Download Mode: "
+                      f"{col("Single Item" if dwn_mode == 1 else "Playlist", "cyan")}")
+
                 # Display default if it exists
                 if default_format:
-                    print(f"{col('●', "yellow")} Default Format: "
-                          f"{col(f"\'{default_format}\'", "cyan")}")
+                    print(f"{col('●', "yellow")} Default Format: {col(
+                        "None" if not default_format else f"\'{default_format}\'", "cyan")}")
 
             @staticmethod
             def fc_mode() -> None:
@@ -864,25 +866,61 @@ class Menu:
                 print(f"  {col('2', "cyan")}) Advanced")
 
             @staticmethod
-            def fc_make_default(cur_format: str, dwn_mode: int) -> None:
+            def fc_dwn_mode(defaults: list[str]) -> None:
+                """
+                Menu to get which Download mode to edit for when using FC through argument
+                :param defaults: List of default formats for each download mode
+                """
+
+                # Custom header for edit mode
+                print(f"\n{col('●', "red")} {col("[EDIT MODE]", "yellow")}: "
+                      "Edit default filename formats for each download mode.")
+                print(f"\n{col('●', "magenta")} Current Defaults:")
+                print(f"{col('●', "yellow")} Single Item: {col(
+                    "None" if not defaults[0] else f"\'{defaults[0]}\'", "cyan")}")
+
+                print(f"{col('●', "yellow")} Playlist: {col(
+                    "None" if not defaults[1] else f"\'{defaults[1]}\'", "cyan")}")
+
+                print(f"\n{INFO} What download mode do you want to use?")
+                print(f"  {col('1', 'cyan')}) Single Item")
+                print(f"  {col('2', 'cyan')}) Playlist")
+
+                print(f"\n  {col('Q', 'cyan')}) Exit")
+
+
+            @staticmethod
+            def fc_make_default(cur_format: str, dwn_mode: int, default_format: str = "") -> None:
                 """
                 Prompt for setting default if it doesn't exist
                 :param cur_format: Current format
                 :param dwn_mode: Download mode
+                :param default_format: Default format saved if provided
                 """
                 dwn_txt: str = "Single Item" if dwn_mode == 1 else "Playlist"
 
-                print(f"\n{INFO} No default is set in the config for {col(dwn_txt, "cyan")}.")
-                print(f"  Do you want to set it to {col(f"\'{cur_format}\'", "cyan")}?")
+                if not default_format:
+                    print(f"\n{INFO} No default is set in the config for {col(dwn_txt, "cyan")}.")
+
+                else:
+                    print(f"\n{INFO} Current default is {col(f"\'{default_format}\'", "cyan")}.")
+
+                # If current format is empty and default is set, prompt for clearing default
+                if not cur_format and default_format:
+                    print("  Do you want to remove the default format?")
+
+                else:
+                    print(f"  Do you want to set it to {col(f"\'{cur_format}\'", "cyan")}?")
 
             @staticmethod
             def fc_simple_options(cur_format: str, format_parts: dict[str, list[str]],
-                                  added: list[int]) -> None:
+                                  added: list[int], msg: str = "") -> None:
                 """
                 Display all available parts for Filename Creator
                 :param cur_format: Current filename format
                 :param format_parts: Dictionary of part names: yt-dlp part format
                 :param added: List of added parts by their number
+                :param msg: Message to display, if any
                 """
 
                 # Get options
@@ -917,9 +955,16 @@ class Menu:
                 print(f"\n  {col('S', 'cyan')}) Save")
                 print(f"  {col('R', 'cyan')}) Reset")
 
-                print(f"\n  Current Format: {col(f"\'{cur_format}\'", "cyan")}")
+                print(f"\n  Current Format: "
+                      f"{col("None" if not cur_format else f"\'{cur_format}\'", "cyan")}")
 
-                print(f"\n{INFO} Enter the format number to add it to the filename.")
+                # Display message if any
+                if msg:
+                    print(f"{msg}")
+                else:
+                    print()
+
+                print(f"{INFO} Enter the format number to add it to the filename.")
 
             @staticmethod
             def fc_simple_confirm(cur_format: str) -> None:
@@ -927,7 +972,9 @@ class Menu:
                 Menu to confirm the filename format in Simple mode
                 :param cur_format: Filename format
                 """
-                print(f"\n{INFO} Current Format: {col(f"\'{cur_format}\'", 'cyan')}")
+                print(f"\n{INFO} Current Format: {col(
+                    "None" if not cur_format else f"\'{cur_format}\'", 'cyan')}")
+
                 print("  Is this correct?")
 
             # TODO: Add advanced mode
@@ -946,6 +993,35 @@ class Menu:
                 :param filename_format: Filename format
                 """
                 pass
+
+        class Messages:
+            """
+            Messages for FC
+            """
+
+            @staticmethod
+            def fc_simple_msg_reset() -> str:
+                """
+                Message to display when the filename format is reset
+                :return: Message
+                """
+                return f"\n{SUCCESS} {col("Current Format has been reset.", "green")}"
+
+            @staticmethod
+            def fc_simple_msg_empty_format() -> str:
+                """
+                Error message when trying to use an empty filename format outside of edit mode
+                :return Error
+                """
+                return f"\n{FAIL} {col("Filename format cannot be empty.", "red")}"
+
+            @staticmethod
+            def fc_simple_msg_part_added() -> str:
+                """
+                Error message when trying to add an already added part
+                :return: Error
+                """
+                return f"\n{FAIL} {col("Part is already added. Reset to change parts.", "red")}"
 
     class Download:
         """
@@ -1198,6 +1274,13 @@ class Menu:
                 Message to display when the config file has no problems
                 """
                 print(f"\n{SUCCESS} {col("No problems found in the config file.", "green")}")
+
+            @staticmethod
+            def fc_default_changed() -> None:
+                """
+                Message to display when the default file format has changed
+                """
+                print(f"\n{SUCCESS} {col("Default file format changed successfully.", "green")}")
 
         class Warning:
             """
