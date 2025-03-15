@@ -15,3 +15,8 @@ artwork_directory: ~/Pictures/YouTube Downloads
 
 # Default video quality for Video downloads ['']
 default_video_quality: ''
+
+# Default filename format [single: '', playlist: '']
+default_filename_format:
+  single: ''
+  playlist: ''

@@ -342,17 +342,7 @@ class Backend:
             case 2:
                 # Custom
 
-                # Use different format dicts based on download mode
-                match self.item_count:
-                    case 1:
-                        # Single Item
-                        self.filename_format: list[str] = FilenameCreator(
-                            parts=Utilities.FORMAT_PARTS_S).filename_format
-
-                    case 2:
-                        # Playlist
-                        self.filename_format: list[str] = FilenameCreator(
-                            parts=Utilities.FORMAT_PARTS_P).filename_format
+                self.filename_format: list[str] = FilenameCreator(dwn_mode=self.item_count).filename_format
 
     ### Get URL ###
 
@@ -508,12 +498,10 @@ class Backend:
 
         return n_status, cur_item
 
-    def construct_paths(self, cur_item: int, titles: list[str], uploaders: list[str]):
+    def construct_paths(self, cur_item: int):
         """
         Construct download paths for non-Artwork downloads
         :param cur_item: Current item
-        :param titles: List of video titles
-        :param uploaders: List of uploaders
         """
 
         # Set index
@@ -586,10 +574,15 @@ class Backend:
         for key, value in self.extracted_info.items():
             self.sanitized_info[key] = Utilities.sanitize_list(unclean_list=value)
 
-        self.titles: list[str] = self.extracted_info["title"]
-        self.titles_safe: list[str] = self.sanitized_info["title"]
-        self.uploaders: list[str] = self.extracted_info["uploader"]
-        self.uploaders_safe: list[str] = self.sanitized_info["uploader"]
+        # TODO: Change this so not having a title could cause an error
+
+        if "title" in list(self.extracted_info.keys()):
+            self.titles: list[str] = self.extracted_info["title"]
+            self.titles_safe: list[str] = self.sanitized_info["title"]
+
+        if "uploader" in list(self.extracted_info.keys()):
+            self.uploaders: list[str] = self.extracted_info["uploader"]
+            self.uploaders_safe: list[str] = self.sanitized_info["uploader"]
 
         # If a playlist, get the playlist name
         if self.item_count == 2:
@@ -624,7 +617,7 @@ class Backend:
 
             # For non-Artwork downloads, construct download path only for Single Item downloads
             if self.dwn_type != 3 and self.item_count == 1:
-                self.construct_paths(cur_item=cur_item, titles=self.titles_safe, uploaders=self.uploaders_safe)
+                self.construct_paths(cur_item=cur_item)
 
             # For Artwork downloads, construct download path for all items
             elif self.dwn_type == 3:

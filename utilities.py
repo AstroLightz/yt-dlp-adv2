@@ -12,6 +12,7 @@ class Utilities:
 
     VERSION: str = "1.9.0"
     COMMITS_LINK: str = "https://github.com/AstroLightz/yt-dlp-adv2/commits/master/"
+    CONFIG_FILENAME: str = "config.yml"
 
     ## FILENAME CREATOR ##
 
@@ -65,9 +66,9 @@ class Utilities:
         ],
 
         "(item #) - (uploader) - (title).(ext)": [
-                "{item_num} - {uploader} - {title}",
-                "%(playlist_index)s - %(uploader)s - %(title)s.%(ext)s"
-            ],
+            "{item_num} - {uploader} - {title}",
+            "%(playlist_index)s - %(uploader)s - %(title)s.%(ext)s"
+        ],
 
         "(item #) - (title).(ext)": [
             "{item_num} - {title}",
@@ -86,11 +87,6 @@ class Utilities:
         "(uploader)": [
             "{uploader}",
             "%(uploader)s"
-        ],
-
-        "(item #)": [
-            "{item_num}",
-            "%(playlist_index)s"
         ],
 
         "(upload date)": [
@@ -135,6 +131,117 @@ class Utilities:
             "%(playlist_id)s"
         ]
     }
+
+    ## MENUS ##
+
+    @staticmethod
+    def menu_get_options(entries: int) -> list[str]:
+        """
+        Given number of entries, format a string for input menus
+        :param entries: Number of entries in menu
+        :return: List of each option in the menu
+        """
+
+        opt_list: list[str] = []
+
+        for i in range(entries):
+            if i < 9:
+                # 1-9
+                opt_list.append(f"{i + 1}")
+
+            elif i == 9:
+                # 0 for 10
+                opt_list.append("0")
+
+            else:
+                # Chars after 10
+                opt_list.append(f"{chr(55 + i)}")
+
+        return opt_list
+
+    @staticmethod
+    def input_convert_to_int(input_str: str, entries: int) -> int:
+        """
+        Converts the input string into an integer
+        :param input_str: Input
+        :param entries: Number of entries
+        :return: number
+        """
+
+        if entries > 10:
+
+            # Convert 0 to 10 and Letters to 10 + LTR
+            if input_str == "0":
+                choice: int = 10
+            elif input_str.isalpha():
+                choice: int = ord(input_str.upper()) - 54
+            else:
+                choice: int = int(input_str)
+
+        elif entries > 9:
+
+            # Convert 0 to 10
+            if input_str == "0":
+                choice: int = 10
+            else:
+                choice: int = int(input_str)
+
+        else:
+
+            # Convert to num
+            choice: int = int(input_str)
+
+        return choice
+
+    @staticmethod
+    def input_get_options(entries: int) -> [str, str]:
+        """
+        Given number of entries, format a string for input menus
+        :param entries: Number of entries in menu
+        :return: Formatted string [n/n+1/n+2...n+e] and max entries for error display
+        """
+
+        options: str = '['
+
+        # Calculate the max entries string
+        if entries > 10:
+            # User chars
+            max_entries_str: str = chr(54 + entries)
+
+        elif entries > 9:
+            # 10 entries: use 0
+            max_entries_str: str = "0"
+
+        else:
+            # 1-9 entries: use the number
+            max_entries_str = str(entries)
+
+        for i in range(entries):
+            if i != entries - 1:
+
+                # If the number is less than 10, add it to the list
+                if i < 9:
+                    options += f"{i + 1}/"
+                # If the number is 10, add 0 to the list
+                elif i == 9:
+                    options += "0/"
+
+                # If the number is greater than 10, add the letter to the list (A, B, C, etc.)
+                else:
+                    options += f"{chr(55 + i)}/"
+
+            else:
+
+                if i < 9:
+                    options += f"{i + 1}"
+                elif i == 9:
+                    options += "0"
+                else:
+                    options += f"{chr(55 + i)}"
+
+        options += "]"
+
+        return options, max_entries_str
 
     @staticmethod
     def exists_on_disk(path: str) -> bool:

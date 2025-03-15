@@ -16,6 +16,7 @@ import sys
 
 from backend import Backend
 from confighandler import ConfigEditor
+from filenamecreator import FilenameCreator
 from menu import Menu
 from utilities import Utilities
 
@@ -31,8 +32,8 @@ def handle_args() -> int:
 
     global _BYPASS_DEFAULTS
 
-    options: str = "hvcB"
-    long_options: list[str] = ["help", "version", "config", "bypass-defaults"]
+    options: str = "hvcfB"
+    long_options: list[str] = ["help", "version", "config",  "filename-creator", "bypass-defaults"]
 
     # Get command line arguments
     cmd_args: list = sys.argv[1:]
@@ -61,6 +62,10 @@ def handle_args() -> int:
                     Backend()
 
                 return 1
+
+            elif arg in ("-f", "--filename-creator") and num_args == 1:
+                # Open the Filename Creator
+                FilenameCreator()
 
             elif arg in ("-B", "--bypass-defaults") and num_args == 1:
                 # Bypass default preferences

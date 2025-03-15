@@ -18,11 +18,12 @@
 
 ### BRANCH
 - Implement Filename Creator
-    1. Mode + Header
-    2. List all parts.
-        i. Add extension at the end of "Current Format" display. Make it white
     3. Confirm
     4. Advanced Mode
         i. Validate yt-dlp filename format contains valid parts
 
 - Add preference in config for default filename format
+- Add preference in config for showing full title in download status (How it was previously): status_title_only. Default to true
+- Add messages throughout FC for better user experience
+- Add prompt for setting which Download Mode to use when using FC through argument
+- Improve display for certain parts of FC. e.g. empty strings -> "None"

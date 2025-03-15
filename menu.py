@@ -220,7 +220,8 @@ class Menu:
                   f"\n\nOptions:"
                   f"\n{col("-h, --help", "cyan")}: Show this help message."
                   f"\n{col("-v, --version", "cyan")}: Show script version."
-                  f"\n{col("-c, --config", "cyan")}: Open the Config Editor.")
+                  f"\n{col("-c, --config", "cyan")}: Open the Config Editor."
+                  f"\n{col("-f, --filename-creator", "cyan")}: Open the Filename Creator.")
 
         @staticmethod
         def show_version(v: str) -> None:
@@ -270,30 +271,40 @@ class Menu:
         """
 
         @staticmethod
-        def get_input_custom(opt_range: list[int | str], default_option: int | str,
-                             no_default: bool = False, list_options: bool = True) -> str:
+        def get_input_custom(opt_range: list[int | str], default_option: int | str = 1,
+                             no_default: bool = False, list_options: bool = True,
+                             dynamic_options: bool = False, invalid_opts: list[int | str] = None) -> str:
             """
             Custom Input system. Provide the options range and (optionally) the default option
             :param opt_range: List of integers representing the options. Order in the list will be used in display.
             :param default_option: Default option
             :param no_default: If True, no default option
             :param list_options: If True, list available options
+            :param dynamic_options: If True, uses the length of the options range to display options. Otherwise,
+            uses the options list directly
+            :param invalid_opts: List of invalid options, if any
             :return: The selected option
             """
 
-            # Create options list string if requested
-            options_list: str = ""
+            # Get options
+            if dynamic_options:
+                options_list, max_entries_str = Utilities.input_get_options(entries=len(opt_range))
 
-            if list_options:
-                options_list = "["
+            else:
+                options_list: str = '['
 
                 for opt in opt_range:
-                    if opt != opt_range[-1]:
-                        options_list += f"{opt}/"
+                    if invalid_opts and str(opt) in [str(opt) for opt in invalid_opts]:
+                        continue
+
                     else:
-                        options_list += f"{opt}"
+                        if opt != opt_range[-1]:
+                            options_list += f"{opt}/"
+                        else:
+                            options_list += f"{opt}"
 
                 options_list += "]"
+                max_entries_str = options_list[-1]
 
             while True:
                 try:
@@ -324,16 +335,39 @@ class Menu:
                                                opt_range]:
                             raise ValueError
 
+                        # Handle invalid
+                        elif invalid_opts and int(choice) in invalid_opts:
+                            raise ValueError
+
                     else:
                         if choice.upper() not in [opt.upper() if isinstance(opt, str) else opt for opt in opt_range]:
+                            raise ValueError
+
+                        # Handle invalid
+                        elif invalid_opts and choice.upper() in invalid_opts:
                             raise ValueError
 
                     return choice.upper() if choice.isalpha() else choice
 
                 except ValueError:
-                    print(
-                        f"\n{FAIL} {col(f"Invalid input. Please enter an option from the"
-                                        f" following selection: {opt_range}", "red")}")
+                        if invalid_opts:
+                            print(f"\n{FAIL} {col("Option is unavailable. Please try again.", "red")}")
+
+                        elif dynamic_options and len(opt_range) > 10:
+                            print(
+                                f"\n{FAIL} {col(f"Invalid input. Please enter an integer or letter between 1-0 and "
+                                                f"{f"A-{max_entries_str}" if len(opt_range) > 11 else \
+                                                    max_entries_str}.", "red")}")
+
+                        elif dynamic_options:
+                            print(
+                                f"\n{FAIL} {col(f"Invalid input. Please enter an integer between 1 and {"0" \
+                                    if len(opt_range) > 9 else len(opt_range)}.", "red")}")
+
+                        else:
+                            print(
+                                f"\n{FAIL} {col(f"Invalid input. Please enter a valid option: "
+                                                f"{opt_range}", "red")}")
 
         @staticmethod
         def get_input_pref_value(p_key: str, p_value: Any, d_value: Any) -> Any:
@@ -511,46 +545,49 @@ class Menu:
             :return: The selected option
             """
 
-            # Create options list string
-            options_list: str = "["
+            # Get options
+            options_list, max_entries_str = Utilities.input_get_options(entries=num_entries)
 
-            # Calculate the max entries string
-            if num_entries > 10:
-                # User chars
-                max_entries_str: str = chr(54 + num_entries)
-
-            elif num_entries > 9:
-                # 10 entries: use 0
-                max_entries_str: str = "0"
-
-            else:
-                # 1-9 entries: use the number
-                max_entries_str = str(num_entries)
-
-            for i in range(num_entries):
-                if i != num_entries - 1:
-
-                    # If the number is less than 10, add it to the list
-                    if i < 9:
-                        options_list += f"{i + 1}/"
-                    # If the number is 10, add 0 to the list
-                    elif i == 9:
-                        options_list += "0/"
-
-                    # If the number is greater than 10, add the letter to the list (A, B, C, etc.)
-                    else:
-                        options_list += f"{chr(55 + i)}/"
-
-                else:
-
-                    if i < 9:
-                        options_list += f"{i + 1}"
-                    elif i == 9:
-                        options_list += "0"
-                    else:
-                        options_list += f"{chr(55 + i)}"
-
-            options_list += "]"
+            # # Create options list string
+            # options_list: str = "["
+            #
+            # # Calculate the max entries string
+            # if num_entries > 10:
+            #     # User chars
+            #     max_entries_str: str = chr(54 + num_entries)
+            #
+            # elif num_entries > 9:
+            #     # 10 entries: use 0
+            #     max_entries_str: str = "0"
+            #
+            # else:
+            #     # 1-9 entries: use the number
+            #     max_entries_str = str(num_entries)
+            #
+            # for i in range(num_entries):
+            #     if i != num_entries - 1:
+            #
+            #         # If the number is less than 10, add it to the list
+            #         if i < 9:
+            #             options_list += f"{i + 1}/"
+            #         # If the number is 10, add 0 to the list
+            #         elif i == 9:
+            #             options_list += "0/"
+            #
+            #         # If the number is greater than 10, add the letter to the list (A, B, C, etc.)
+            #         else:
+            #             options_list += f"{chr(55 + i)}/"
+            #
+            #     else:
+            #
+            #         if i < 9:
+            #             options_list += f"{i + 1}"
+            #         elif i == 9:
+            #             options_list += "0"
+            #         else:
+            #             options_list += f"{chr(55 + i)}"
+            #
+            # options_list += "]"
 
             while True:
                 try:
@@ -798,87 +835,117 @@ class Menu:
                 for i, p in enumerate(presets):
                     print(f"  {col(str(i + 1), 'cyan')}) {p}")
 
-            class Custom:
+        class Custom:
+            """
+            Filename format custom menus/messages
+            """
+
+            @staticmethod
+            def fc_header(default_format: str = "") -> None:
                 """
-                Filename format custom menus/messages
+                Display header for Filename Creator
+                :param default_format: Default filename format if it exists
+                """
+                print(f"\n{col('●', "red")} Welcome to the {col("Filename Creator", "red")}!")
+                print(f"{col('●', "magenta")} Construct your own filename format for you downloads.")
+
+                # Display default if it exists
+                if default_format:
+                    print(f"{col('●', "yellow")} Default Format: "
+                          f"{col(f"\'{default_format}\'", "cyan")}")
+
+            @staticmethod
+            def fc_mode() -> None:
+                """
+                Menu to choose which mode for Filename Creator
+                """
+                print(f"\n{INFO} What mode do you want to use?")
+                print(f"  {col('1', "cyan")}) Simple")
+                print(f"  {col('2', "cyan")}) Advanced")
+
+            @staticmethod
+            def fc_make_default(cur_format: str, dwn_mode: int) -> None:
+                """
+                Prompt for setting default if it doesn't exist
+                :param cur_format: Current format
+                :param dwn_mode: Download mode
+                """
+                dwn_txt: str = "Single Item" if dwn_mode == 1 else "Playlist"
+
+                print(f"\n{INFO} No default is set in the config for {col(dwn_txt, "cyan")}.")
+                print(f"  Do you want to set it to {col(f"\'{cur_format}\'", "cyan")}?")
+
+            @staticmethod
+            def fc_simple_options(cur_format: str, format_parts: dict[str, list[str]],
+                                  added: list[int]) -> None:
+                """
+                Display all available parts for Filename Creator
+                :param cur_format: Current filename format
+                :param format_parts: Dictionary of part names: yt-dlp part format
+                :param added: List of added parts by their number
                 """
 
-                @staticmethod
-                def fc_header(default_format: str = "") -> None:
-                    """
-                    Display header for Filename Creator
-                    :param default_format: Default filename format if it exists
-                    """
-                    print(f"\n{col('●', "red")} Welcome to the {col("Filename Creator", "red")}!")
-                    print(f"{col('●', "magenta")} Construct your own filename format for you downloads.")
+                # Get options
+                options: list[str] = Utilities.menu_get_options(entries=len(format_parts))
 
-                    # Display default if it exists
-                    if default_format:
-                        print(f"{col('●', "yellow")} Default Format: "
-                              f"{col(f"\'{default_format}\'", "cyan")}")
+                print(f"\n{INFO} The following format parts are available:")
 
-                @staticmethod
-                def fc_mode() -> None:
-                    """
-                    Menu to choose which mode for Filename Creator
-                    """
-                    print(f"\n{INFO} What mode do you want to use?")
-                    print(f"  {col('1', "cyan")}) Simple")
-                    print(f"  {col('2', "cyan")}) Advanced")
+                # Display format parts in a table
+                for i, p_name in enumerate(format_parts.keys()):
 
-                @staticmethod
-                def fc_simple_options(cur_format: str, format_parts: dict[str, str]) -> None:
-                    """
-                    Display all available parts for Filename Creator
-                    :param cur_format: Current filename format
-                    :param format_parts: Dictionary of part names: yt-dlp part format
-                    """
-                    print(f"\n{INFO} The following format parts are available:")
-
-                    # Display format parts in a table
-                    for i, p_name in enumerate(format_parts.keys()):
-
-                        # Write to left column
-                        if i % 2 == 0:
-                            print(f"  {col(i + 1, "cyan")}) \'{p_name}\'", end="")
-
-                            # Newline if last item
-                            if i == len(format_parts) - 1:
-                                print()
+                    # Write to left column
+                    if i % 2 == 0:
+                        if i + 1 in added:
+                            print(f"  {col(f"{options[i]}) {f"\'{p_name}\'":<25}", "red")}", end="")
 
                         else:
-                            # Write to right column
-                            print(f"{col(i + 1, "cyan"):<10}) \'{p_name}\'")
+                            print(f"  {col(options[i], "cyan")}) {f"\'{p_name}\'":<25}", end="")
 
-                    print(f"\n  Current Format: {col(f"\'{cur_format}\'", "cyan")}\n")
+                        # Newline if last item
+                        if i == len(format_parts) - 1:
+                            print()
 
-                    print(f"\n{INFO} Enter the format number to add it to the filename.")
+                    else:
+                        # Write to right column
+                        if i + 1 in added:
+                            print(f"{col(f"{options[i]}) \'{p_name}\'", "red")}")
 
-                @staticmethod
-                def fc_simple_confirm(cur_format: str) -> None:
-                    """
-                    Menu to confirm the filename format in Simple mode
-                    :param cur_format: Filename format
-                    """
-                    print(f"\n{INFO} Current Format: {col(f"\'{cur_format}\'", 'cyan')}")
-                    print("  Is this correct?")
+                        else:
+                            print(f"{col(options[i], "cyan")}) \'{p_name}\'")
 
-                # TODO: Add advanced mode
+                # Display menu nav options
+                print(f"\n  {col('S', 'cyan')}) Save")
+                print(f"  {col('R', 'cyan')}) Reset")
 
-                @staticmethod
-                def fc_adv_prompt() -> None:
-                    """
-                    Menu for entering yt-dlp filename format
-                    """
-                    pass
+                print(f"\n  Current Format: {col(f"\'{cur_format}\'", "cyan")}")
 
-                @staticmethod
-                def fc_adv_confirm(filename_format: str) -> None:
-                    """
-                    Menu to confirm the filename format in Advanced mode
-                    :param filename_format: Filename format
-                    """
-                    pass
+                print(f"\n{INFO} Enter the format number to add it to the filename.")
+
+            @staticmethod
+            def fc_simple_confirm(cur_format: str) -> None:
+                """
+                Menu to confirm the filename format in Simple mode
+                :param cur_format: Filename format
+                """
+                print(f"\n{INFO} Current Format: {col(f"\'{cur_format}\'", 'cyan')}")
+                print("  Is this correct?")
+
+            # TODO: Add advanced mode
+
+            @staticmethod
+            def fc_adv_prompt() -> None:
+                """
+                Menu for entering yt-dlp filename format
+                """
+                pass
+
+            @staticmethod
+            def fc_adv_confirm(filename_format: str) -> None:
+                """
+                Menu to confirm the filename format in Advanced mode
+                :param filename_format: Filename format
+                """
+                pass
 
     class Download:
         """
@@ -1022,10 +1089,14 @@ class Menu:
             """
             Displays list of video qualities
             """
+
+            # Get options
+            options: list[str] = Utilities.menu_get_options(entries=len(qualities))
+
             print(f"\n{INFO} What video quality do you want to use?")
 
             for i, quality in enumerate(qualities):
-                print(f"  {col(str(i + 1), 'cyan')}) {quality}")
+                print(f"  {col(options[i], 'cyan')}) {quality}")
 
         @staticmethod
         def default_quality(quality: str) -> None:

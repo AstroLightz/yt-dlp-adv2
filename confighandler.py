@@ -8,6 +8,7 @@ from pathlib import PurePosixPath
 from ruamel.yaml import YAML
 
 from menu import Menu
+from utilities import Utilities
 
 
 class ConfigError(Exception):
@@ -68,7 +69,7 @@ class ConfigHandler:
 
         # Set default config path if not provided
         if not file:
-            file = "config.yml"
+            file = Utilities.CONFIG_FILENAME
 
         self.config_path: str = f"{self.script_dir}/{file}"
 
@@ -277,7 +278,7 @@ class ConfigEditor:
     """
 
     def __init__(self):
-        self.ch: ConfigHandler = ConfigHandler(file="config.yml")
+        self.ch: ConfigHandler = ConfigHandler(file=Utilities.CONFIG_FILENAME)
 
         # Validate config
         self.errors: list[ConfigError] = ConfigValidator(config_handler=self.ch).config_errors
