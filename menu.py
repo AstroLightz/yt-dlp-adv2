@@ -270,34 +270,53 @@ class Menu:
         """
 
         @staticmethod
-        def get_input_custom(opt_range: list[int | str], default_option: int | str, no_default: bool = False) -> str:
+        def get_input_custom(opt_range: list[int | str], default_option: int | str,
+                             no_default: bool = False, list_options: bool = True) -> str:
             """
             Custom Input system. Provide the options range and (optionally) the default option
             :param opt_range: List of integers representing the options. Order in the list will be used in display.
             :param default_option: Default option
             :param no_default: If True, no default option
+            :param list_options: If True, list available options
             :return: The selected option
             """
 
-            # Create options list string
-            options_list: str = "["
+            # Create options list string if requested
+            options_list: str = ""
 
-            for opt in opt_range:
-                if opt != opt_range[-1]:
-                    options_list += f"{opt}/"
-                else:
-                    options_list += f"{opt}"
+            if list_options:
+                options_list = "["
 
-            options_list += "]"
+                for opt in opt_range:
+                    if opt != opt_range[-1]:
+                        options_list += f"{opt}/"
+                    else:
+                        options_list += f"{opt}"
+
+                options_list += "]"
 
             while True:
                 try:
-                    if no_default:
+                    if no_default and list_options:
+                        # > [options]:
+
                         choice = input(f"> {col(options_list, "magenta")}: ")
 
-                    else:
+                    elif no_default:
+                        # >
+
+                        choice = input("> ")
+
+                    elif list_options:
+                        # > [options] (default):
+
                         choice = input(f"> {col(options_list, "magenta")} "
                                        f"{col(f"({default_option})", "cyan")}: ") or str(default_option)
+
+                    else:
+                        # > (default):
+
+                        choice = input(f"> {col(f"({default_option})", "cyan")}: ") or str(default_option)
 
                     # Handle integers
                     if choice.isnumeric():
@@ -706,26 +725,6 @@ class Menu:
             print(f"  {col('2', "cyan")}) Playlist")
 
         @staticmethod
-        def filename_format_s() -> None:
-            """
-            [Single Item] Get the format for the filename
-            """
-            print(f"\n{INFO} What format do you want the filenames to be?")
-            print(f"  {col('1', "cyan")}) (uploader) - (title).(ext)")
-            print(f"  {col('2', "cyan")}) (title).(ext)")
-
-        @staticmethod
-        def filename_format_p() -> None:
-            """
-            [Playlist] Get the format for the filename
-            """
-            print(f"\n{INFO} What format do you want the filenames to be?")
-            print(f"  {col('1', "cyan")}) (uploader) - (title).(ext)")
-            print(f"  {col('2', "cyan")}) (title).(ext)")
-            print(f"  {col('3', "cyan")}) (item #) - (uploader) - (title).(ext)")
-            print(f"  {col('4', "cyan")}) (item #) - (title).(ext)")
-
-        @staticmethod
         def get_url() -> None:
             """
             Get the URL of the item
@@ -733,14 +732,15 @@ class Menu:
             print(f"\n{INFO} Enter the YouTube URL:")
 
         @staticmethod
-        def confirmation_screen(dwn_type: int, file_format: int, item_count: int, filename_format: int,
-                                video_quality: str or None) -> None:
+        def confirmation_screen(dwn_type: int, file_format: int, item_count: int, ff_mode: int,
+                                filename_format: list[str], video_quality: str or None) -> None:
             """
             Display a confirmation screen with all chosen options
             :param dwn_type: Download type
             :param file_format: File format
             :param item_count: Item count (Single Item/Playlist)
-            :param filename_format: Filename format
+            :param ff_mode: Type of filename format
+            :param filename_format: Filename format list
             :param video_quality: Video quality
             """
 
@@ -748,7 +748,7 @@ class Menu:
             v_dwn_type: str = Utilities.get_download_type(dwn_type=dwn_type)
             v_file_format: str = Utilities.get_file_format(file_format=file_format, dwn_type=dwn_type)
             v_item_count: str = Utilities.get_download_mode(item_count=item_count)
-            v_filename_format: str = Utilities.get_filename_format(item_count=item_count,
+            v_filename_format: str = Utilities.get_filename_format(item_count=item_count, ff_mode=ff_mode,
                                                                    filename_format=filename_format)
 
             # Display confirmation screen
@@ -767,6 +767,118 @@ class Menu:
 
             print("\n")
             print(f"{INFO} Proceed with the download?")
+
+    class FilenameFormat:
+        """
+        Contains all menus/messages regarding filename formats and the Filename Creator
+        """
+
+        @staticmethod
+        def format_mode() -> None:
+            """
+            Menu to choose which mode to use: Presets or Custom
+            """
+            print(f"\n{INFO} What type of filename format do you want to use?")
+            print(f"  {col('1', "cyan")}) Presets")
+            print(f"  {col('2', "cyan")}) Custom")
+
+        class Presets:
+            """
+            Filename format preset menus/messages
+            """
+
+            @staticmethod
+            def preset_menu(presets: list[str]) -> None:
+                """
+                Get the format for the filename
+                :param presets: List of presets
+                """
+                print(f"\n{INFO} What format do you want the filenames to be?")
+
+                for i, p in enumerate(presets):
+                    print(f"  {col(str(i + 1), 'cyan')}) {p}")
+
+            class Custom:
+                """
+                Filename format custom menus/messages
+                """
+
+                @staticmethod
+                def fc_header(default_format: str = "") -> None:
+                    """
+                    Display header for Filename Creator
+                    :param default_format: Default filename format if it exists
+                    """
+                    print(f"\n{col('●', "red")} Welcome to the {col("Filename Creator", "red")}!")
+                    print(f"{col('●', "magenta")} Construct your own filename format for you downloads.")
+
+                    # Display default if it exists
+                    if default_format:
+                        print(f"{col('●', "yellow")} Default Format: "
+                              f"{col(f"\'{default_format}\'", "cyan")}")
+
+                @staticmethod
+                def fc_mode() -> None:
+                    """
+                    Menu to choose which mode for Filename Creator
+                    """
+                    print(f"\n{INFO} What mode do you want to use?")
+                    print(f"  {col('1', "cyan")}) Simple")
+                    print(f"  {col('2', "cyan")}) Advanced")
+
+                @staticmethod
+                def fc_simple_options(cur_format: str, format_parts: dict[str, str]) -> None:
+                    """
+                    Display all available parts for Filename Creator
+                    :param cur_format: Current filename format
+                    :param format_parts: Dictionary of part names: yt-dlp part format
+                    """
+                    print(f"\n{INFO} The following format parts are available:")
+
+                    # Display format parts in a table
+                    for i, p_name in enumerate(format_parts.keys()):
+
+                        # Write to left column
+                        if i % 2 == 0:
+                            print(f"  {col(i + 1, "cyan")}) \'{p_name}\'", end="")
+
+                            # Newline if last item
+                            if i == len(format_parts) - 1:
+                                print()
+
+                        else:
+                            # Write to right column
+                            print(f"{col(i + 1, "cyan"):<10}) \'{p_name}\'")
+
+                    print(f"\n  Current Format: {col(f"\'{cur_format}\'", "cyan")}\n")
+
+                    print(f"\n{INFO} Enter the format number to add it to the filename.")
+
+                @staticmethod
+                def fc_simple_confirm(cur_format: str) -> None:
+                    """
+                    Menu to confirm the filename format in Simple mode
+                    :param cur_format: Filename format
+                    """
+                    print(f"\n{INFO} Current Format: {col(f"\'{cur_format}\'", 'cyan')}")
+                    print("  Is this correct?")
+
+                # TODO: Add advanced mode
+
+                @staticmethod
+                def fc_adv_prompt() -> None:
+                    """
+                    Menu for entering yt-dlp filename format
+                    """
+                    pass
+
+                @staticmethod
+                def fc_adv_confirm(filename_format: str) -> None:
+                    """
+                    Menu to confirm the filename format in Advanced mode
+                    :param filename_format: Filename format
+                    """
+                    pass
 
     class Download:
         """

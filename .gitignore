@@ -7,3 +7,6 @@ workspace.xml
 
 # User config
 config.yml
+
+# Test Videos
+test_videos.txt

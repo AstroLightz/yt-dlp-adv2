@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any
 
 import yt_dlp as yt
+import re
 
 
 class Utilities:
@@ -9,8 +10,131 @@ class Utilities:
     Static class that contains utility functions not necessarily related yt-dlp
     """
 
-    VERSION: str = "1.8.0"
+    VERSION: str = "1.9.0"
     COMMITS_LINK: str = "https://github.com/AstroLightz/yt-dlp-adv2/commits/master/"
+
+    ## FILENAME CREATOR ##
+
+    @staticmethod
+    def get_required(filename_format: list[str]) -> dict[str, list[str]]:
+        """
+        Get required info needed to extract from URL
+        :param filename_format: filename format list
+        :return: Dictionary of part: []
+        """
+
+        format_str: str = filename_format[2]
+
+        # Remove the extension
+        format_str = format_str.split(".")[0]
+
+        # Split on divider
+        format_list: list[str] = format_str.split(" - ")
+
+        # Remove yt-dlp formatting for each part
+        # e.g. %(title)s -> title
+        for i in range(len(format_list)):
+            format_list[i] = re.sub(r"%\((.*?)\)s", r'\1', format_list[i], flags=re.IGNORECASE)
+
+        # Return dict with each part as a key
+        return {format_list[i]: [] for i in range(len(format_list))}
+
+    # Filename format presets
+    # Pair: Display Format: [f-string format, yt-dlp format]
+    FORMAT_PRESETS_S: dict[str, list[str]] = {
+        "(uploader) - (title).(ext)": [
+            "{uploader} - {title}",
+            "%(uploader)s - %(title)s.%(ext)s"
+        ],
+
+        "(title).(ext)": [
+            "{title}",
+            "%(title)s.%(ext)s"
+        ]
+    }
+
+    FORMAT_PRESETS_P: dict[str, list[str]] = {
+        "(uploader) - (title).(ext)": [
+            "{uploader} - {title}",
+            "%(uploader)s - %(title)s.%(ext)s"
+        ],
+
+        "(title).(ext)": [
+            "{title}",
+            "%(title)s.%(ext)s"
+        ],
+
+        "(item #) - (uploader) - (title).(ext)": [
+                "{item_num} - {uploader} - {title}",
+                "%(playlist_index)s - %(uploader)s - %(title)s.%(ext)s"
+            ],
+
+        "(item #) - (title).(ext)": [
+            "{item_num} - {title}",
+            "%(playlist_index)s - %(title)s.%(ext)s"
+        ]
+    }
+
+    # Format Parts
+    # Pair: Format: [f-string format, yt-dlp format]
+    FORMAT_PARTS_S: dict[str, list[str]] = {
+        "(title)": [
+            "{title}",
+            "%(title)s"
+        ],
+
+        "(uploader)": [
+            "{uploader}",
+            "%(uploader)s"
+        ],
+
+        "(item #)": [
+            "{item_num}",
+            "%(playlist_index)s"
+        ],
+
+        "(upload date)": [
+            "{upload_date}",
+            "%(upload_date)s"
+        ],
+
+        "(video id)": [
+            "{video_id}",
+            "%(id)s"
+        ]
+    }
+
+    FORMAT_PARTS_P: dict[str, list[str]] = {
+        "(title)": [
+            "{title}",
+            "%(title)s"
+        ],
+
+        "(uploader)": [
+            "{uploader}",
+            "%(uploader)s"
+        ],
+
+        "(item #)": [
+            "{item_num}",
+            "%(playlist_index)s"
+        ],
+
+        "(playlist name)": [
+            "{playlist_name}",
+            "%(playlist)s"
+        ],
+
+        "(playlist uploader)": [
+            "{playlist_uploader}",
+            "%(playlist_uploader)s"
+        ],
+
+        "(playlist id)": [
+            "{playlist_id}",
+            "%(playlist_id)s"
+        ]
+    }
 
     @staticmethod
     def exists_on_disk(path: str) -> bool:
@@ -114,19 +238,6 @@ class Utilities:
         }
     }
 
-    FILENAME_FORMATS: dict[str, dict[int, str]] = {
-        "filename_format_s": {
-            1: "(uploader) - (title).(ext)",
-            2: "(title).(ext)"
-        },
-        "filename_format_p": {
-            1: "(uploader) - (title).(ext)",
-            2: "(title).(ext)",
-            3: "(item #) - (uploader) - (title).(ext)",
-            4: "(item #) - (title).(ext)"
-        }
-    }
-
     UNITS: list[str] = ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]
 
     @staticmethod
@@ -170,19 +281,28 @@ class Utilities:
         return "Single Item" if item_count == 1 else "Playlist"
 
     @staticmethod
-    def get_filename_format(item_count: int, filename_format: int) -> str:
+    def get_filename_format(item_count: int, ff_mode: int, filename_format: list[str]) -> str:
         """
         Get the filename format
         :param item_count: Number of items (1 = Single Item, 2 = Playlist)
-        :param filename_format: Filename format
-        :return: Filename format
+        :param ff_mode: File format mode (Preset vs Custom)
+        :param filename_format: Filename format list
+        :return: Filename format key
         """
 
-        if item_count == 1:
-            return Utilities.FILENAME_FORMATS["filename_format_s"][filename_format]
+        if ff_mode == 1 and item_count == 1:
+            # Single Presets
+            return list(Utilities.FORMAT_PRESETS_S.keys())[
+                list(Utilities.FORMAT_PRESETS_S.values()).index(filename_format)]
+
+        elif ff_mode == 1 and item_count == 2:
+            # Playlist Presets
+            return list(Utilities.FORMAT_PRESETS_P.keys())[
+                list(Utilities.FORMAT_PRESETS_P.values()).index(filename_format)]
 
         else:
-            return Utilities.FILENAME_FORMATS["filename_format_p"][filename_format]
+            # Custom: Use first item in list
+            return filename_format[0]
 
     ## FILE SIZE ##
 

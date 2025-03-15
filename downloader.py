@@ -140,15 +140,16 @@ class Downloader:
                 return ""
 
     @staticmethod
-    def setup_ytdlp_options(dwn_type: int, file_format: int, item_count: int,
-                            dwn_dir: str, filename_format: int, playlist_name: str, video_quality: str) -> dict:
+    def setup_ytdlp_options(dwn_type: int, file_format: int, item_count: int, dwn_dir: str, ff_mode: int,
+                            filename_format: list[str], playlist_name: str, video_quality: str) -> dict:
         """
         Sets up the yt-dlp options
         :param dwn_type: Download type: 1 = Video, 2 = Audio, 3 = Artwork
         :param file_format: File format: Depends on download type
         :param item_count: Number of items: 1 = Single item, 2 = Playlist
         :param dwn_dir: Download directory
-        :param filename_format: Filename format: 1 = (uploader) - (title).(ext), 2 = (title).(ext)
+        :param ff_mode: Type of filename format: 1 = (uploader) - (title).(ext), 2 = (title).(ext)
+        :param filename_format: Filename format list
         :param playlist_name: Playlist name
         :param video_quality: Video quality if specified
         :return: dictionary containing all yt-dlp options
@@ -246,51 +247,27 @@ class Downloader:
         #                               Setup Path
         # -------------------------------------------------------------------------------
 
-        # Single item
-        if item_count == 1:
+        match item_count:
+            case 1:
+                # Single item
 
-            # (uploader) - (title).(ext)
-            match filename_format:
-                case 1 if dwn_type != 3:
-                    ytdlp_options["outtmpl"] = f"{dwn_dir}%(uploader)s - %(title)s.%(ext)s"
+                ytdlp_options["outtmpl"] = f"{dwn_dir}{filename_format[2]}"
 
-                # (title).(ext)
-                case 2:
-                    ytdlp_options["outtmpl"] = f"{dwn_dir}%(title)s.%(ext)s"
+            case 2:
+                # Playlist
 
-        # Playlist
-        elif item_count == 2:
-
-            # (uploader) - (title).(ext)
-            match filename_format:
-                case 1 if dwn_type != 3:
-                    ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(uploader)s - %(title)s.%(ext)s"
-
-                # (title).(ext)
-                case 2:
-                    ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(title)s.%(ext)s"
-
-                # (item #) - (uploader) - (title).(ext)
-                case 3:
-                    ytdlp_options[
-                        "outtmpl"] = f"{dwn_dir}{playlist_name}/%(playlist_index)s - %(uploader)s - %(title)s.%(ext)s"
-
-                # (item #) - (title).(ext)
-                case 4:
-                    ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/%(playlist_index)s - %(title)s.%(ext)s"
+                ytdlp_options["outtmpl"] = f"{dwn_dir}{playlist_name}/{filename_format[2]}"
 
         return ytdlp_options
 
     @staticmethod
-    def extract_info(yt_url: str) -> tuple[list[str], list[str]]:
+    def extract_info(yt_url: str, required: dict[str, list[str]]) -> dict[str, list[str]]:
         """
         Extract all info from a YouTube URL
         :param yt_url: URL
-        :return: Returns a tuple of (titles, uploaders)
+        :param required: Dictionary of required info to extract
+        :return: Returns a dictionary of all extracted info as field: [value for each video]
         """
-
-        titles: list[str] = []
-        uploaders: list[str] = []
 
         # Setup yt-dlp args
         ydl_args = {
@@ -312,18 +289,17 @@ class Downloader:
 
                 # Loop through the entries and extract info
                 for entry in entries:
-                    titles.append(entry.get("title", "Unknown"))
-                    uploaders.append(entry.get("uploader", "Unknown"))
-
+                    for k in list(required.keys()):
+                        required[k].append(entry.get(k, "Unknown"))
 
             except Exception as e:
                 print(f"Error: {e}")
 
-        return titles, uploaders
+        return required
 
     @staticmethod
-    def download(url: str, ytdlp_options: dict, dwn_type: int, item_count: int, filename_format: int,
-                 titles: list[str], uploaders: list[str],
+    def download(url: str, ytdlp_options: dict, dwn_type: int, item_count: int, ff_mode: int,
+                 filename_format: list[str], titles: list[str], extracted_info: dict[str, list[str]],
                  progress_callback=None) -> [int, int]:
         """
         Download an item
@@ -331,9 +307,10 @@ class Downloader:
         :param ytdlp_options: Dictionary of yt-dlp options
         :param dwn_type: Download type
         :param item_count: Item count
-        :param filename_format: Filename format
+        :param ff_mode: Type of filename format
+        :param filename_format: Filename format list
         :param titles: List of titles
-        :param uploaders: List of uploaders
+        :param extracted_info: Dictionary of extracted info
         :param progress_callback: Progress callback
         :return: Returns True if successful
         """
@@ -358,39 +335,7 @@ class Downloader:
             status: str = data.get("status")
 
             # Get title
-            title: str = ""
-
-            if item_count == 1:
-                # Single Items
-
-                match filename_format:
-                    case 1:
-                        # Uploader - Title
-                        title = f"{uploaders[0]} - {titles[0]}"
-
-                    case 2:
-                        # Title
-                        title = f"{titles[0]}"
-
-            elif item_count == 2:
-                # Playlist
-
-                match filename_format:
-                    case 1:
-                        # Uploader - Title
-                        title = f"{uploaders[cur_item - 1]} - {titles[cur_item - 1]}"
-
-                    case 2:
-                        # Title
-                        title = f"{titles[cur_item - 1]}"
-
-                    case 3:
-                        # Item # - Uploader - Title
-                        title = f"{cur_item} - {uploaders[cur_item - 1]} - {titles[cur_item - 1]}"
-
-                    case 4:
-                        # Item # - Title
-                        title = f"{cur_item} - {titles[cur_item - 1]}"
+            title: str = titles[cur_item - 1]
 
             # Get values if downloading
             if status == "downloading" or status == "finished":

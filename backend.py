@@ -9,6 +9,7 @@ from wand.image import Image
 
 from confighandler import ConfigHandler, ConfigValidator, ConfigError
 from downloader import Downloader
+from filenamecreator import FilenameCreator, GetPartAt
 from menu import Menu
 from utilities import Utilities
 from videoquality import VideoQuality
@@ -28,7 +29,12 @@ class Backend:
         self.dwn_type = None
         self.file_format = None
         self.item_count = None
+
+        # Filename Format
         self.filename_format = None
+        self.ff_mode = None
+        self.ff_preset = None
+
         self.yt_url = None
         self.switch_mode = None
         self.duplicate = None
@@ -40,6 +46,15 @@ class Backend:
         self.num_items = None
         self.dwn_size = None
         self.failed_downloads: list[str] = []
+
+        # Required info needed to extract
+        self.required_info: dict = {}
+
+        # Extracted info
+        self.extracted_info: dict = {}
+
+        # Sanitized info
+        self.sanitized_info: dict = {}
 
         # Directory Path for download
         self.download_dir = None
@@ -139,7 +154,7 @@ class Backend:
 
         # Filename Format. Default to (title).(ext) for artwork
         if self.dwn_type == 3:
-            self.filename_format: int = 2
+            self.ff_preset: int = 2
         else:
             self.menu_filename_format()
 
@@ -283,23 +298,61 @@ class Backend:
 
     def menu_filename_format(self):
 
-        # Handle different filename formats prompts
-        match self.item_count:
-            case 1:
-                # Single item
-                Menu.Main.filename_format_s()
-                Menu.gap(1)
+        # Get type of filename format
+        Menu.FilenameFormat.format_mode()
+        Menu.gap(1)
 
-                self.filename_format: int = Menu.Input.get_input_num(
-                    num_entries=len(Utilities.FILENAME_FORMATS["filename_format_s"]), default_option=1)
+        self.ff_mode: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
+
+        match self.ff_mode:
+            case 1:
+                # Use presets
+
+                match self.item_count:
+                    case 1:
+                        # Single item
+                        Menu.FilenameFormat.Presets.preset_menu(presets=list(Utilities.FORMAT_PRESETS_S.keys()))
+                        Menu.gap(1)
+
+                        self.ff_preset: int = Menu.Input.get_input_num(
+                            num_entries=len(Utilities.FORMAT_PRESETS_S), default_option=1)
+
+                        # Get format list from dict
+                        self.filename_format: list[str] = (
+                            Utilities.FORMAT_PRESETS_S)[list(Utilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1]]
+
+                        # Add filename format key to list
+                        self.filename_format.insert(0, list(Utilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1])
+
+                    case 2:
+                        # Playlist
+                        Menu.FilenameFormat.Presets.preset_menu(presets=list(Utilities.FORMAT_PRESETS_P.keys()))
+                        Menu.gap(1)
+
+                        self.ff_preset: int = Menu.Input.get_input_num(
+                            num_entries=len(Utilities.FORMAT_PRESETS_P), default_option=1)
+
+                        # Get format list from dict
+                        self.filename_format: list[str] = (
+                            Utilities.FORMAT_PRESETS_P)[list(Utilities.FORMAT_PRESETS_P.keys())[self.ff_preset - 1]]
+
+                        # Add filename format key to list
+                        self.filename_format.insert(0, list(Utilities.FORMAT_PRESETS_P.keys())[self.ff_preset - 1])
 
             case 2:
-                # Playlist
-                Menu.Main.filename_format_p()
-                Menu.gap(1)
+                # Custom
 
-                self.filename_format: int = Menu.Input.get_input_num(
-                    num_entries=len(Utilities.FILENAME_FORMATS["filename_format_p"]), default_option=1)
+                # Use different format dicts based on download mode
+                match self.item_count:
+                    case 1:
+                        # Single Item
+                        self.filename_format: list[str] = FilenameCreator(
+                            parts=Utilities.FORMAT_PARTS_S).filename_format
+
+                    case 2:
+                        # Playlist
+                        self.filename_format: list[str] = FilenameCreator(
+                            parts=Utilities.FORMAT_PARTS_P).filename_format
 
     ### Get URL ###
 
@@ -310,8 +363,8 @@ class Backend:
 
     def menu_confirmation(self):
         Menu.Main.confirmation_screen(dwn_type=self.dwn_type, file_format=self.file_format,
-                                      item_count=self.item_count, filename_format=self.filename_format,
-                                      video_quality=self.video_quality)
+                                      item_count=self.item_count, ff_mode=self.ff_mode,
+                                      filename_format=self.filename_format, video_quality=self.video_quality)
 
         choice: bool = Menu.Input.get_input_bool(default_option=False)
 
@@ -466,38 +519,12 @@ class Backend:
         # Set index
         i: int = cur_item - 1
 
-        if self.dwn_type != 3:
-            if self.item_count == 1:
-                # Single Item
-
-                match self.filename_format:
-                    case 1:
-                        # (uploader) - (title).(ext)
-                        self.download_path = f"{self.download_dir}{uploaders[i]} - {titles[i]}.{self.file_ext}"
-
-                    case 2:
-                        # (title).(ext)
-                        self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
-
-            elif self.item_count == 2:
-                # Playlist
-
-                match self.filename_format:
-                    case 1:
-                        # (uploader) - (title).(ext)
-                        self.download_path = f"{self.download_dir}{uploaders[i]} - {titles[i]}.{self.file_ext}"
-
-                    case 2:
-                        # (title).(ext)
-                        self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
-
-                    case 3:
-                        # (item #) - (uploader) - (title).(ext)
-                        self.download_path = f"{self.download_dir}{cur_item} - {uploaders[i]} - {titles[i]}.{self.file_ext}"
-
-                    case 4:
-                        # (item #) - (title).(ext)
-                        self.download_path = f"{self.download_dir}{cur_item} - {titles[i]}.{self.file_ext}"
+        # Download path is only needed for single item downloads
+        if self.dwn_type != 3 and self.item_count == 1:
+            # Set download path
+            # Map the filename format using the dictionary list values at i using the custom dictionary wrapper
+            self.download_path = self.download_dir + self.filename_format[1].format_map(
+                GetPartAt(self.sanitized_info, index=i)) + f".{self.file_ext}"
 
     def convert_images(self, titles: list[str]):
         """
@@ -549,13 +576,20 @@ class Backend:
         # Get number of items
         self.num_items: int = Downloader.get_title_count(self.yt_url)
 
-        # Extract info from URL
-        self.titles, self.uploaders = Downloader.extract_info(self.yt_url)
+        # Get the required info from the filename format
+        self.required_info: dict[str, list[str]] = Utilities.get_required(filename_format=self.filename_format)
 
-        # Convert titles and uploaders to a safe version, replacing invalid characters with underscores
-        # Save them to a new list
-        self.titles_safe: list[str] = Utilities.sanitize_list(unclean_list=self.titles)
-        self.uploaders_safe: list[str] = Utilities.sanitize_list(unclean_list=self.uploaders)
+        # Extract info from URL
+        self.extracted_info: dict[str, list[str]] = Downloader.extract_info(self.yt_url, required=self.required_info)
+
+        # Convert all info to a safe version, replacing invalid characters with underscores
+        for key, value in self.extracted_info.items():
+            self.sanitized_info[key] = Utilities.sanitize_list(unclean_list=value)
+
+        self.titles: list[str] = self.extracted_info["title"]
+        self.titles_safe: list[str] = self.sanitized_info["title"]
+        self.uploaders: list[str] = self.extracted_info["uploader"]
+        self.uploaders_safe: list[str] = self.sanitized_info["uploader"]
 
         # If a playlist, get the playlist name
         if self.item_count == 2:
@@ -568,6 +602,7 @@ class Backend:
         # Set up yt-dlp options
         self.ytdlp_options = Downloader.setup_ytdlp_options(dwn_type=self.dwn_type, file_format=self.file_format,
                                                             item_count=self.item_count, dwn_dir=self.download_dir,
+                                                            ff_mode=self.ff_mode,
                                                             filename_format=self.filename_format,
                                                             playlist_name=self.playlist_name,
                                                             video_quality=self.video_quality)
@@ -578,8 +613,10 @@ class Backend:
         dwn_status, cur_item = Downloader.download(url=self.yt_url, ytdlp_options=self.ytdlp_options,
                                                    dwn_type=self.dwn_type,
                                                    item_count=self.item_count,
+                                                   ff_mode=self.ff_preset,
                                                    filename_format=self.filename_format,
-                                                   titles=self.titles, uploaders=self.uploaders,
+                                                   titles=self.titles,
+                                                   extracted_info=self.extracted_info,
                                                    progress_callback=Backend.download_callback)
 
         if dwn_status == 0:
