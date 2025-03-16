@@ -29,16 +29,31 @@ class Utilities:
         # Remove the extension
         format_str = format_str.split(".")[0]
 
-        # Split on divider
-        format_list: list[str] = format_str.split(" - ")
-
         # Remove yt-dlp formatting for each part
         # e.g. %(title)s -> title
-        for i in range(len(format_list)):
-            format_list[i] = re.sub(r"%\((.*?)\)s", r'\1', format_list[i], flags=re.IGNORECASE)
+        format_list = re.findall(r"%\(([^)]+)\)s", format_str)
 
         # Return dict with each part as a key
-        return {format_list[i]: [] for i in range(len(format_list))}
+        return {key: [] for key in format_list}
+
+    @staticmethod
+    def ytdlp_to_display(ytdlp_format: str) -> list[str]:
+        """
+        Gets the display format and f-string format from a yt-dlp format filename format
+        :param ytdlp_format: yt-dlp filename format
+        :return: list of all three formats: [Display format, f-string format, yt-dlp format]
+        """
+
+        # Remove the extension
+        ytdlp_format = ytdlp_format.split(".")[0]
+
+        # Replace '%(' with '{' and ')s' with '}'
+        fstring_format: str = ytdlp_format.replace("%(", "{").replace(")s", "}")
+
+        # Replace {}s with ()s
+        display_format: str = fstring_format.replace("{", "(").replace("}", ")")
+
+        return [display_format, fstring_format, ytdlp_format]
 
     # Filename format presets
     # Pair: Display Format: [f-string format, yt-dlp format]
@@ -286,7 +301,7 @@ class Utilities:
         clean_list: list[str] = []
 
         for item in unclean_list:
-            clean_list.append(yt.utils.sanitize_filename(s=item, restricted=True))
+            clean_list.append(yt.utils.sanitize_filename(s=str(item), restricted=True))
 
         return clean_list
 

@@ -214,10 +214,44 @@ class ConfigValidator:
                                                    f"\n      Current type: '{type(value).__name__}'")
                 self.config_errors.append(err)
 
+            if key == "default_filename_format":
+                # Validate filename formats
+
+                self.validate_fileformats(key=key)
+
             if isinstance(value, str) and key in self.path_prefs:
                 # Validate path
 
                 self.validate_path(key=key, value=value)
+
+    def validate_fileformats(self, key: str):
+        """
+        Validate default filename formats
+        """
+
+        try:
+            default_formats = self.ch.config_vals[key]
+
+            # Not a dictionary
+            if not isinstance(default_formats, dict):
+                raise AttributeError
+
+            # dict key values are not list[str]
+            for k, v in default_formats.items():
+                if not isinstance(v, list):
+                    raise AttributeError
+
+                elif not all(isinstance(i, str) for i in v):
+                    raise AttributeError
+
+                # dict keys must be "single" and "playlist"
+                elif k not in ["single", "playlist"]:
+                    raise AttributeError
+
+        except AttributeError:
+            err: ConfigError = ConfigError(err_code=2,
+                                           msg=f"'{key}': {Menu.Config.Messages.err_invalid_filename_formats()}")
+            self.config_errors.append(err)
 
     def validate_path(self, key: str, value: str):
         """
@@ -324,11 +358,21 @@ class ConfigEditor:
                 match self.menu_choice:
                     case '1':
                         # View Config
-                        self.view_config()
+                        try:
+                            self.view_config()
+
+                        except (KeyError, TypeError, AttributeError, ValueError, IndexError):
+                            Menu.Problem.Error.config_menu_error()
+                            continue
 
                     case '2':
                         # Edit Config
-                        self.edit_config()
+                        try:
+                            self.edit_config()
+
+                        except (KeyError, TypeError, AttributeError, ValueError, IndexError):
+                            Menu.Problem.Error.config_menu_error()
+                            continue
 
                     case '3':
                         # Reset Config
@@ -359,7 +403,7 @@ class ConfigEditor:
 
     def main_menu(self):
         Menu.gap(1)
-        Menu.Config.config_menu()
+        Menu.Config.config_menu(problems=self.errors)
         Menu.gap(1)
 
         # Get main menu choice
@@ -389,7 +433,7 @@ class ConfigEditor:
 
                 # Use Filename Creator if editing default filename format
                 if pref_key == "default_filename_format":
-                    FilenameCreator()
+                    FilenameCreator(dwn_mode=-1)
 
                     # Reload preferences
                     self.ch = ConfigHandler(file=Utilities.CONFIG_FILENAME)
@@ -445,24 +489,32 @@ class ConfigEditor:
     def reset_config(self):
         # Requires confirmation
 
-        if self.cur_prefs == self.ch.default_vals:
-            # User config is already default
-            Menu.Problem.Error.pref_already_default()
-            return
+        try:
+            if self.cur_prefs == self.ch.default_vals:
+                # User config is already default
+                Menu.Problem.Error.pref_already_default()
+                return
 
-        # Skip confirmation if config file is deformed
-        if len(self.errors) > 0 and self.errors[0].err_code == 5:
+            # Skip confirmation if config file is deformed
+            if len(self.errors) > 0 and self.errors[0].err_code == 5:
+                self.reset_confirm = True
+
+            else:
+                Menu.Config.reset_defaults(config=self.cur_prefs, defaults=self.ch.default_vals)
+
+                # Get confirmation
+                self.reset_confirm = Menu.Input.get_input_bool(default_option=False)
+
+        except (KeyError, TypeError, AttributeError, ValueError, IndexError):
+            # Skip confirmation if an error prevents confirmation
             self.reset_confirm = True
-
-        else:
-            Menu.Config.reset_defaults(config=self.cur_prefs, defaults=self.ch.default_vals)
-
-            # Get confirmation
-            self.reset_confirm = Menu.Input.get_input_bool(default_option=False)
 
         # If confirmed, reset config
         if self.reset_confirm:
             self.ch.set_defaults()
+
+            # Reload preferences
+            self.ch = ConfigHandler(file=Utilities.CONFIG_FILENAME)
             self.cur_prefs = self.ch.get_config()
 
             # Check for errors

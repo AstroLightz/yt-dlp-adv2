@@ -39,14 +39,23 @@ class Menu:
             print(f"{col('●', "yellow")} Config path: {col(f"\'{config_path}\'", "cyan")}")
 
         @staticmethod
-        def config_menu() -> None:
+        def config_menu(problems: list) -> None:
             """
             Main menu for config editor
+            :param problems: List of all problems, if any
             """
             print(f"{INFO} What would you like to do?")
             print(f"  {col('1', 'cyan')}) View Config")
             print(f"  {col('2', "cyan")}) Edit Config")
-            print(f"  {col('3', "cyan")}) Reset to Default")
+
+            # Display message if any problems
+            print(f"  {col('3', "cyan")}) Reset to Default", end="")
+
+            if len(problems) > 0:
+                print(f" {col("[Recommended]", "yellow")}")
+            else:
+                print()
+
             print(f"  {col('4', "cyan")}) View Config Path")
             print(f"  {col('5', "cyan")}) View Problems")
 
@@ -74,10 +83,39 @@ class Menu:
             print(f"\n{INFO} Preferences in {col(f'\'{config_name}\'', "cyan")}:")
 
             for key, value in config.items():
-                # Remove underscores and capitalize first letter
-                t_key = key.replace("_", " ").title()
+                if key == "default_filename_format":
+                    # Show custom display
+                    Menu.FilenameFormat.display_ff_full(ff_pref=value)
 
-                print(f"  - {t_key}: {col(Utilities.pref_display_value(p_value=value), 'magenta')}")
+                else:
+                    # Remove underscores and capitalize first letter
+                    t_key = key.replace("_", " ").title()
+
+                    print(f"  - {t_key}: {col(Utilities.pref_display_value(p_value=value), 'magenta')}")
+
+        class Messages:
+            """
+            Messages for Config Editor
+            """
+
+            @staticmethod
+            def err_invalid_filename_formats() -> str:
+                """
+                String for invalid default filename formats in config
+                :return: error msg
+                """
+                return """Invalid default filename format.
+    
+    Default filename format in config file should look like:
+    default_filename_format:
+      single:
+      - ''
+      - ''
+      - ''
+      playlist:
+      - ''
+      - ''
+      - ''"""
 
         @staticmethod
         def preference_menu(config: dict, changes: dict) -> None:
@@ -97,8 +135,9 @@ class Menu:
 
                 # For default filename format, show custom message
                 if key == "default_filename_format":
-                    print(f"  {col(str(i + 1), 'cyan')}) {t_key}: "
-                          f"{col("Edit with Filename Creator", "yellow")} ", end="")
+                    # print(f"  {col(str(i + 1), 'cyan')}) {t_key}: "
+                    #       f"{col("Edit with Filename Creator", "yellow")} ", end="")
+                    Menu.FilenameFormat.display_ff_full(ff_pref=value, item_num=i + 1)
 
                 else:
                     print(
@@ -275,6 +314,29 @@ class Menu:
         """
         Contains all input prompts and input validation
         """
+
+        @staticmethod
+        def get_input_format() -> str:
+            """
+            Get input for Advanced filename format
+            :return: yt-dlp filename format
+            """
+
+            while True:
+                try:
+                    ytdlp_format: str = input(f"> {CYAN}")
+
+                    # Reset ANSI codes
+                    print(RESET, end="")
+
+                    if "%(" not in ytdlp_format and ")s" not in ytdlp_format:
+                        raise ValueError
+
+                    return ytdlp_format
+
+                except ValueError:
+                    print(f"\n{FAIL} {col("Invalid yt-dlp format. "
+                                          "Make sure to include \'%(\' and \')s\' for special names.", "red")}")
 
         @staticmethod
         def get_input_custom(opt_range: list[int | str], default_option: int | str = 1,
@@ -817,6 +879,39 @@ class Menu:
             """
             print(f"\n{INFO} Using default filename format: {col(f"\'{default_format}\'", "cyan")}")
 
+        @staticmethod
+        def display_ff_full(ff_pref: dict[str, list[str]], item_num: int = 0) -> None:
+            """
+            Display full filename format tree. Used for Config Editor
+            :param ff_pref: Default filename format preference
+            :param item_num: Item number in Edit Config to display as #). Uses - if 0
+            """
+
+            single_vals: list[str] = ff_pref[list(ff_pref.keys())[0]]
+            playlist_vals: list[str] = ff_pref[list(ff_pref.keys())[1]]
+
+            # Item num display
+            print(f"  {col(item_num, "cyan")}) " if item_num != 0 else "  - ", end="")
+
+            # Display edit message if item num is set
+            print(f"Default Filename Format: "
+                  f"{col("Edit with Filename Creator", "cyan") if item_num != 0 else ''}")
+
+            print("    * Single Item:")
+
+            print(f"        Display Format:  {col(f"\'{single_vals[0]}\'", "magenta")}")
+            print(f"        f-string Format: {col(f"\'{single_vals[1]}\'", "magenta")}")
+            print(f"        yt-dlp Format:   {col(f"\'{single_vals[2]}\'", "magenta")}")
+
+            print("    * Playlist:")
+
+            print(f"        Display Format:  {col(f"\'{playlist_vals[0]}\'", "magenta")}")
+            print(f"        f-string Format: {col(f"\'{playlist_vals[1]}\'", "magenta")}")
+            print(f"        yt-dlp Format:   {col(f"\'{playlist_vals[2]}\'", "magenta")}", end="")
+
+            if item_num == 0:
+                print()
+
         class Presets:
             """
             Filename format preset menus/messages
@@ -866,9 +961,10 @@ class Menu:
                 print(f"  {col('2', "cyan")}) Advanced")
 
             @staticmethod
-            def fc_dwn_mode(defaults: list[str]) -> None:
+            def fc_dwn_mode(dwn_mode: int, defaults: list[str]) -> None:
                 """
                 Menu to get which Download mode to edit for when using FC through argument
+                :param dwn_mode: Download mode
                 :param defaults: List of default formats for each download mode
                 """
 
@@ -885,9 +981,34 @@ class Menu:
                 print(f"\n{INFO} What download mode do you want to use?")
                 print(f"  {col('1', 'cyan')}) Single Item")
                 print(f"  {col('2', 'cyan')}) Playlist")
+                print(f"  {col('3', 'cyan')}) Clear Defaults")
 
-                print(f"\n  {col('Q', 'cyan')}) Exit")
+                # Don't show launch downloader if coming from Config Editor
+                if dwn_mode != -1:
+                    print(f"\n  {col('S', "cyan")}) Launch Downloader")
 
+                else:
+                    print()
+
+                print(f"  {col('Q', 'cyan')}) Exit")
+
+            @staticmethod
+            def fc_clear_confirm() -> None:
+                """
+                Prompt for confirmation to clear defaults for Single Item and Playlist default FFs
+                """
+                print(f"\n{WARN} {col("Are you sure you want to set the defaults to None?", "yellow")}")
+
+            @staticmethod
+            def fc_confirm(cur_format: str) -> None:
+                """
+                Menu to confirm the filename format in
+                :param cur_format: Filename format
+                """
+                print(f"\n{INFO} Current Format: {col(
+                    "None" if not cur_format else f"\'{cur_format}\'", 'cyan')}")
+
+                print("  Is this correct?")
 
             @staticmethod
             def fc_make_default(cur_format: str, dwn_mode: int, default_format: str = "") -> None:
@@ -967,32 +1088,18 @@ class Menu:
                 print(f"{INFO} Enter the format number to add it to the filename.")
 
             @staticmethod
-            def fc_simple_confirm(cur_format: str) -> None:
-                """
-                Menu to confirm the filename format in Simple mode
-                :param cur_format: Filename format
-                """
-                print(f"\n{INFO} Current Format: {col(
-                    "None" if not cur_format else f"\'{cur_format}\'", 'cyan')}")
-
-                print("  Is this correct?")
-
-            # TODO: Add advanced mode
-
-            @staticmethod
             def fc_adv_prompt() -> None:
                 """
                 Menu for entering yt-dlp filename format
                 """
-                pass
+                print(
+                    f"\n{col('●', "red")} Advanced Mode allows you to enter your own custom format [Also called Output Templates].")
+                print(
+                    f"{col('●', "magenta")} Make sure you enter a valid output template otherwise the value will be NA.")
+                print(f"{col('●', "yellow")} More info on output templates: "
+                      f"{col("\'https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template\'", "cyan")}")
 
-            @staticmethod
-            def fc_adv_confirm(filename_format: str) -> None:
-                """
-                Menu to confirm the filename format in Advanced mode
-                :param filename_format: Filename format
-                """
-                pass
+                print(f"\n{INFO} Enter the filename format.")
 
         class Messages:
             """
@@ -1093,7 +1200,7 @@ class Menu:
         @staticmethod
         def download_status_a(cur_item: int, total_items: int, title: str) -> None:
             """
-            Download status for Artwork downloads. Since yt-dlp skips download, there is not progress_hook. This is
+            Download status for Artwork downloads. Since yt-dlp skips download, there is no progress_hook. This is
             simply a workaround to display the progress. Only display cur/total items, and title
             :param cur_item: Current item
             :param total_items: Total items
@@ -1103,20 +1210,22 @@ class Menu:
                   f"{col(f"\'{title}\'", "cyan")}")
 
         @staticmethod
-        def all_downloads_complete(completed: int, total: int, path_dir: str, size: str) -> None:
+        def all_downloads_complete(completed: int, total: int, path_dir: str, size: str = "") -> None:
             """
             Message to display when all downloads are complete
             :param completed: Number of completed downloads
             :param total: Total number of downloads
             :param path_dir: Path to the directory where the downloads are saved
-            :param size: Size string containing size of download and unit (bytes)
+            :param size: Size string containing size of download and unit (bytes). If blank, will not display
             """
             print(f"\n\n\n{col('●', "red")}{col('●', "magenta")}{col('●', "yellow")}"
                   f" {col("Download Summary", "green", attrs=["bold", "underline"])} "
                   f"{col('●', "yellow")}{col('●', "magenta")}{col('●', "red")}")
             print(f"{SUCCESS} {col(completed, "yellow")} out of {col(total, "yellow")} item(s) downloaded "
                   f"successfully to {col(f"\'{path_dir}\'", "cyan")}.")
-            print(f"  Used {col(size, "yellow")} of storage.")
+
+            if size:
+                print(f"  Used {col(size, "yellow")} of storage.")
 
         @staticmethod
         def failed_downloads_list(failed: int, items: list[str]) -> None:
@@ -1282,6 +1391,13 @@ class Menu:
                 """
                 print(f"\n{SUCCESS} {col("Default file format changed successfully.", "green")}")
 
+            @staticmethod
+            def fc_cleared_defaults() -> None:
+                """
+                Message to display when all default filename formats have been cleared
+                """
+                print(f"\n{SUCCESS} {col("Default file formats have been cleared.", "green")}")
+
         class Warning:
             """
             Any problems that don't immediately cause an error, but require attention
@@ -1381,6 +1497,24 @@ class Menu:
                 print(f"\n{FAIL} {col(error, "red")}")
 
             @staticmethod
+            def error_msg_crash(error: Exception) -> None:
+                """
+                Generic error message but with extra info
+                :param error: Exception
+                """
+                print(f"\n{FAIL} {col(f"An error occurred: {error}", "red")}")
+                print(col("  If you used an advanced filename format, make sure you enter it in correctly.", "red"))
+
+            @staticmethod
+            def dwn_size_error(error: Exception) -> None:
+                """
+                Generic error message when getting download size
+                :param error: Exception
+                """
+                print(f"\n{FAIL} {col("An error occurred while trying to get the download size:", "red")}")
+                print(col(f"  - {error}", "red"))
+
+            @staticmethod
             def invalid_url() -> None:
                 """
                 Error when the URL is not valid
@@ -1423,6 +1557,14 @@ class Menu:
                 Error when all preferences are already set to default
                 """
                 print(f"\n{FAIL} {col("Preferences are already set to default.", "red")}")
+
+            @staticmethod
+            def config_menu_error():
+                """
+                Error to display when a menu in Config Editor cannot be opened
+                """
+                print(f"\n{FAIL} {col("An error occurred that prevents opening this menu. "
+                                      "Config reset may be required.", "red")}")
 
             @staticmethod
             def config_error(e: Exception | list[Exception], config_path: str) -> None:

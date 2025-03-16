@@ -1,10 +1,6 @@
 ### ADD
 - Add filename formats for Playlist Directory names
-- Overhaul filename format by allowing users to create their own formats through pre-defined options
-    - Allow making their own filename formats default by saving to the config
-    - Possibly make this an option for Playlist Directory names
-    - Would be a menu-driven process, similar to the Config Editor
-
+- Add preference in config for showing full title in download status (How it was previously): status_title_only. Default to true
 
 ### FIX
 - Support playlists for video quality
@@ -14,19 +10,3 @@
 - Clean up README and add a logo
 - Update screenshots in README with new UI
 - Improve Download status for Artwork. Show a Download status for total download since individual status is not available
-
-
-### BRANCH
-
-#### HIGH PRIORITY
-- Improve default filename format display in Config Editor
-- Implement Filename Creator
-    4. Advanced Mode
-        i. Validate yt-dlp filename format contains valid parts
-
-#### MEDIUM PRIORITY
-- Update ConfigValidator to handle default filename format preference errors
-
-#### LOW PRIORITY
-- Add preference in config for showing full title in download status (How it was previously): status_title_only. Default to true
-- Update ConfigEditor to use FC when editing default filename format preference

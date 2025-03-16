@@ -155,10 +155,17 @@ class Backend:
         # Filename Format.
         default_format = self.CONFIG["default_filename_format"]["single" if self.item_count == 1 else "playlist"]
         if self.bypass_defaults or not default_format[0]:
-            # Default to (title).(ext) for artwork
 
             if self.dwn_type == 3:
+                # Default to (title).(ext) for artwork
+
                 self.ff_preset: int = 2
+
+                self.filename_format: list[str] = (
+                    Utilities.FORMAT_PRESETS_S)[list(Utilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1]]
+
+                # Add key to list
+                self.filename_format.insert(0, list(Utilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1])
 
             else:
                 self.menu_filename_format()
@@ -617,21 +624,31 @@ class Backend:
         Menu.Download.starting_download(count=self.num_items)
 
         # Download
-        dwn_status, cur_item = Downloader.download(url=self.yt_url, ytdlp_options=self.ytdlp_options,
-                                                   dwn_type=self.dwn_type,
-                                                   item_count=self.item_count,
-                                                   ff_mode=self.ff_preset,
-                                                   filename_format=self.filename_format,
-                                                   titles=self.titles,
-                                                   extracted_info=self.extracted_info,
-                                                   progress_callback=Backend.download_callback)
+        try:
+            dwn_status, cur_item = Downloader.download(url=self.yt_url, ytdlp_options=self.ytdlp_options,
+                                                       dwn_type=self.dwn_type,
+                                                       item_count=self.item_count,
+                                                       ff_mode=self.ff_preset,
+                                                       filename_format=self.filename_format,
+                                                       titles=self.titles,
+                                                       extracted_info=self.extracted_info,
+                                                       progress_callback=Backend.download_callback)
+
+        except Exception as e:
+            Menu.Problem.Error.error_msg_crash(error=e)
+            exit(1)
 
         if dwn_status == 0:
             # Download complete.
 
             # For non-Artwork downloads, construct download path only for Single Item downloads
             if self.dwn_type != 3 and self.item_count == 1:
-                self.construct_paths(cur_item=cur_item)
+                try:
+                    self.construct_paths(cur_item=cur_item)
+
+                except Exception as e:
+                    Menu.Problem.Error.error_msg_crash(error=e)
+                    exit(1)
 
             # For Artwork downloads, construct download path for all items
             elif self.dwn_type == 3:
@@ -642,18 +659,27 @@ class Backend:
             self.failed_downloads.append(self.titles_safe[cur_item])
 
         # Get download size. Use different path based on download type
-        match self.item_count:
-            case 1:
-                # Single item
-                self.dwn_size: str = Downloader.get_download_size(path=self.download_path, unit="auto")
+        try:
+            match self.item_count:
+                case 1:
+                    # Single item
+                    self.dwn_size: str = Downloader.get_download_size(path=self.download_path, unit="auto")
 
-            case 2:
-                # Playlist
-                self.dwn_size: str = Downloader.get_download_size(path=self.download_dir + self.playlist_name,
-                                                                  unit="auto")
+                case 2:
+                    # Playlist
+                    self.dwn_size: str = Downloader.get_download_size(path=self.download_dir + self.playlist_name,
+                                                                      unit="auto")
 
-        Menu.Download.all_downloads_complete(completed=self.num_items, total=self.num_items,
-                                             path_dir=self.download_dir, size=self.dwn_size)
+            Menu.Download.all_downloads_complete(completed=self.num_items, total=self.num_items,
+                                                 path_dir=self.download_dir, size=self.dwn_size)
+
+        except Exception as e:
+            # Catch any errors when getting download size
+            Menu.Problem.Error.dwn_size_error(error=e)
+
+            # Display downloads complete without size
+            Menu.Download.all_downloads_complete(completed=self.num_items, total=self.num_items,
+                                                 path_dir=self.download_dir)
 
         # Display failed downloads
         if len(self.failed_downloads) > 0:

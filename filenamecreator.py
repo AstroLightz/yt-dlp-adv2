@@ -41,28 +41,38 @@ class FilenameCreator:
         :param dwn_mode: Download mode (1 = Single Item, 2 = Playlist, 0 = Edit Mode)
         """
 
+        self.launch_downloader: bool = False
+
         self.filename_format = None
         self.edit_mode: bool = False
         self.dwn_mode = dwn_mode
         self.msg: str = ""
 
-        if self.dwn_mode == 0:
+        self.ch: ConfigHandler = ConfigHandler(file=Utilities.CONFIG_FILENAME)
+        self.CONFIG: dict = self.ch.get_config()
+
+        if self.dwn_mode <= 0:
             self.edit_mode = True
 
         while True:
-            self.ch: ConfigHandler = ConfigHandler(file=Utilities.CONFIG_FILENAME)
-            self.CONFIG = self.ch.get_config()
+            self.pull_config()
 
             if self.edit_mode:
                 # Get which download mode to use
-                Menu.FilenameFormat.Custom.fc_dwn_mode(defaults=[self.CONFIG["default_filename_format"]["single"][0],
+                Menu.FilenameFormat.Custom.fc_dwn_mode(dwn_mode=self.dwn_mode,
+                                                       defaults=[self.CONFIG["default_filename_format"]["single"][0],
                                                                  self.CONFIG["default_filename_format"]["playlist"][0]])
                 Menu.gap(1)
 
-                self.dwn_mode: str = Menu.Input.get_input_custom(opt_range=[1, 2, 'Q'], no_default=True)
+                # Don't allow launching the Downloader if coming from Config Editor
+                if self.dwn_mode == -1:
+                    self.dwn_mode: str = Menu.Input.get_input_custom(opt_range=[1, 2, 3, 'Q'], no_default=True)
+
+                else:
+                    self.dwn_mode: str = Menu.Input.get_input_custom(opt_range=[1, 2, 3, 'S', 'Q'], no_default=True)
 
             # Determine which parts are available
-            match self.dwn_mode:
+            match str(self.dwn_mode):
                 case '1':
                     # Single Item
 
@@ -76,6 +86,32 @@ class FilenameCreator:
                     self.dwn_mode = 2
                     self.parts: dict[str, list[str]] = Utilities.FORMAT_PARTS_P
                     self.default_format: list[str] = self.CONFIG["default_filename_format"]["playlist"]
+
+                case '3':
+                    # Clear Defaults
+
+                    Menu.FilenameFormat.Custom.fc_clear_confirm()
+                    confirm: bool = Menu.Input.get_input_bool(default_option=False)
+
+                    if confirm:
+                        # Clear defaults
+                        self.current_format = ["", "", ""]
+
+                        self.CONFIG["default_filename_format"]["single"] = list(self.current_format)
+                        self.CONFIG["default_filename_format"]["playlist"] = list(self.current_format)
+
+                        self.ch.change_prefs(new_prefs=self.CONFIG)
+
+                        self.pull_config()
+
+                        Menu.Problem.Success.fc_default_changed()
+
+                    continue
+
+                case 'S':
+                    # Launch Downloader
+                    self.launch_downloader = True
+                    return
 
                 case 'Q':
                     # Quit. Only used in Edit Mode
@@ -116,6 +152,10 @@ class FilenameCreator:
             if not self.edit_mode:
                 break
 
+    def pull_config(self):
+        self.ch = ConfigHandler(file=Utilities.CONFIG_FILENAME)
+        self.CONFIG = self.ch.get_config()
+
     def menu_simple(self):
         while True:
             Menu.FilenameFormat.Custom.fc_simple_options(cur_format=self.current_format[0],
@@ -140,7 +180,7 @@ class FilenameCreator:
                         continue
 
                     # Confirm save
-                    Menu.FilenameFormat.Custom.fc_simple_confirm(cur_format=self.current_format[0])
+                    Menu.FilenameFormat.Custom.fc_confirm(cur_format=self.current_format[0])
                     Menu.gap(1)
                     self.confirm: bool = Menu.Input.get_input_bool(default_option=False)
 
@@ -199,10 +239,40 @@ class FilenameCreator:
                         self.current_format[2] += f" - {self.sel_part[1]}"
 
     def menu_advanced(self):
-        # TODO: Add advanced menu
-        pass
+        while True:
+            Menu.FilenameFormat.Custom.fc_adv_prompt()
+            self.adv_format: str = Menu.Input.get_input_format()
+
+            # Confirm save
+            Menu.FilenameFormat.Custom.fc_confirm(cur_format=self.adv_format)
+            Menu.gap(1)
+            self.confirm: bool = Menu.Input.get_input_bool(default_option=False)
+
+            if self.confirm:
+                # Convert yt-dlp format to other formats
+                self.current_format: list[str] = Utilities.ytdlp_to_display(ytdlp_format=self.adv_format)
+
+                if self.default_format[0] == "" and not self.edit_mode:
+                    # Prompt for default if none set. Only when used in Downloader
+                    self.set_default()
+
+                    # Continue with download
+                    self.filename_format = list(self.current_format)
+                    break
+
+                elif not self.edit_mode:
+                    # Continue with download without setting default
+                    self.filename_format = list(self.current_format)
+                    break
+
+                elif self.edit_mode:
+                    # Prompt for default regardless if set. Used outside of Downloader
+                    self.set_default()
+                    break
 
     def set_default(self):
+
+        self.pull_config()
 
         if not self.edit_mode:
             Menu.FilenameFormat.Custom.fc_make_default(cur_format=self.current_format[0],

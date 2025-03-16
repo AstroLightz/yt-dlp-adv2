@@ -65,7 +65,8 @@ def handle_args() -> int:
 
             elif arg in ("-f", "--filename-creator") and num_args == 1:
                 # Open the Filename Creator
-                FilenameCreator()
+                if FilenameCreator().launch_downloader:
+                    Backend()
 
                 return 1
 
