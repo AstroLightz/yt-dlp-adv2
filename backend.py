@@ -68,9 +68,6 @@ class Backend:
         self.titles: list[str] = []
         self.titles_safe: list[str] = []
 
-        self.uploaders: list[str] = []
-        self.uploaders_safe: list[str] = []
-
         self.playlist_name: str = ""
 
         self.ytdlp_options: dict = {}
@@ -595,12 +592,8 @@ class Backend:
             self.titles: list[str] = self.extracted_info["title"]
             self.titles_safe: list[str] = self.sanitized_info["title"]
 
-        if "uploader" in list(self.extracted_info.keys()):
-            self.uploaders: list[str] = self.extracted_info["uploader"]
-            self.uploaders_safe: list[str] = self.sanitized_info["uploader"]
-
-        if not self.titles and not self.uploaders:
-            # Fallback to video ID if no titles or uploaders
+        if not self.titles:
+            # Fallback to video ID if no titles
 
             self.titles: list[str] = Downloader.get_video_id(url=self.yt_url)
             self.titles_safe: list[str] = Utilities.sanitize_list(unclean_list=self.titles)

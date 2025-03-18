@@ -1,12 +1,8 @@
 ### ADD
 - Add filename formats for Playlist Directory names
-- Add preference in config for showing full title in download status (How it was previously): status_title_only. Default to true
 
 ### FIX
 - Support playlists for video quality
 
-
 ### CHANGE
-- Clean up README and add a logo
-- Update screenshots in README with new UI
 - Improve Download status for Artwork. Show a Download status for total download since individual status is not available

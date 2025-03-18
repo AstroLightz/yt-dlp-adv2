@@ -1,6 +1,10 @@
-# YouTube Downloader: Advanced 2.0
+<div align="center">
 
-Remake of the original yt-dlp-adv, written in Python.
+<img src=".github/banner.png" alt="YT-DLP-ADV" height="150">
+
+</div>
+
+yt-dlp-adv is a remake of the original yt-dlp-adv, written in Python.
 A clean CLI script to download videos, audio, and thumbnails from YouTube.
 
 This Script utilizes <b>[yt-dlp](https://github.com/yt-dlp/yt-dlp)</b> for downloading content from YouTube.
@@ -14,18 +18,17 @@ This Script utilizes <b>[yt-dlp](https://github.com/yt-dlp/yt-dlp)</b> for downl
 - [Usage](#usage)
 - [Features](#features)
 - [Screenshots](#screenshots)
-- [Project Stages](#project-stages)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
 
 ## Requirements
 
-- A <b>Linux</b>-based system.
-    - Windows WSL and macOS untested
-
+- An operating system with a <b>Unix filesystem</b>.[^1]
 
 - <b>Python 3.13</b> or higher
 - <b>ImageMagick</b>
+
+[^1]: Windows WSL and macOS untested
 
 ## Installation:
 
@@ -56,6 +59,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Then see the [Usage](#usage) section below.
+
 ## Usage:
 
 To use the program, run the following command in your terminal:
@@ -74,7 +79,7 @@ python3 main.py
     - e.g. (uploader) - (title).(ext)
 
 
-- Dynamic directory location for each type of download<sup>2</sup>
+- Dynamic directory location for each type of download[^2]
     - Music: ~/Music/YouTube Downloads
     - Videos: ~/Videos/YouTube Downloads
     - Artwork: ~/Pictures/YouTube Downloads
@@ -83,7 +88,31 @@ python3 main.py
 - Custom download status messages
 - See overview of download after download is complete
 
-More features to come!
+### Filename Creator
+
+Don't like the default filename format presets? Make your own using the <b>Custom</b> option in the menu.
+
+There are two modes to use:
+
+- <b>Simple</b>: Menu-driven creation where you get to pick format parts to assemble your format.
+- <b>Advanced</b>: You can enter your own output template. See the [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template) for more info on output templates.
+
+Filename Creator can be accessed through the Downloader, Config Editor, or by passing `-f` or `--filename-creator` as an argument to `main.py`
+
+### Config Editor
+
+Customize how yt-dlp-adv works through the <b>Config Editor</b>. View, edit, and reset your config file through user-friendly menus.
+
+Your config file is stored in script's directory as `config.yml`.[^3]
+
+Config Editor can be accessed by passing `-c` or `--config` as an argument to `main.py`
+
+<br>
+
+<b>Info on development can be found in the [TODO](./TODO) file.</b>
+
+[^2]: Default download locations can be changed in the Config Editor.
+[^3]: It is recommended to use the Config Editor for editing the config file. You are responsible for any edits made outside the Config Editor.
 
 ## Screenshots
 
@@ -95,39 +124,33 @@ More features to come!
 
 <img src=".github/screenshots/menu_choices.png" alt="Menu Options of yt-dlp-adv script">
 
+### Video Qualities
+
+<img src=".github/screenshots/video_qualities.png" alt="">
+
+
 ### Download Status
 
 <img src=".github/screenshots/download_status.png" alt="Download Status of yt-dlp-adv script">
 
-### Download Summary
+### Custom Presets using the Filename Creator
 
-<img src=".github/screenshots/download_summary.png" alt="Download Summary of yt-dlp-adv script">
+<img src=".github/screenshots/custom_presets.png" alt="">
 
-## Project Stages:
+### Edit config options using the Config Editor
 
-### Stage 1: Recreation (DONE)
+<img src=".github/screenshots/config_editor.png" alt="">
 
-- Recreation of the original yt-dlp-adv in Python 3
-- Keep changes at minimal (Only change currently is swapping 'Single Item' and 'Playlist' positions and minor wording
-  changes)
+#### Making Changes / Video Qualities
 
-### Stage 2: Quality of Life Improvements (DONE)
+<img src=".github/screenshots/config_editor_edit2.png" alt="">
 
-- Minor changes to make the program more user-friendly
-- Better documentation, more clear menus, etc.
+#### Config Problems Handling
 
-### Stage 3: Additional Features (CURRENT)
+<img src=".github/screenshots/config_error_handling.png" alt="">
 
-- Major changes to make the program more smooth and easy to use
-- Potentially replace number input with Up/Down arrows + Enter navigation
 
-More info on development can be found in the [TODO](./TODO) file.
-
-<sup>1</sup> Failed downloads not tested yet. If you find a video or playlist that always fails, and you spot a bug with
-the output/program, create an Issue and include the YT link.
-
-<sup>2</sup> These preferences can be customized in the config.yml file in the program directory or through the Config Editor
-menu, included in the script by passing `-c` or `--config` to the script.
+<br>
 
 ## License:
 
