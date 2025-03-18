@@ -1,8 +1,8 @@
 <div align="center">
-
-<img src=".github/banner.png" alt="YT-DLP-ADV" height="150">
-
+  <img src=".github/banner.png" alt="YT-DLP-ADV" height="150">
 </div>
+
+<br><br>
 
 yt-dlp-adv is a remake of the original yt-dlp-adv, written in Python.
 A clean CLI script to download videos, audio, and thumbnails from YouTube.
@@ -13,8 +13,8 @@ This Script utilizes <b>[yt-dlp](https://github.com/yt-dlp/yt-dlp)</b> for downl
 
 - [Requirements](#requirements)
 - [Installation](#installation)
-  - [Automatic Installation (Experimental)](#automatic-installation-experimental)
-  - [Manual Installation](#manual-installation)
+    - [Automatic Installation (Experimental)](#automatic-installation-experimental)
+    - [Manual Installation](#manual-installation)
 - [Usage](#usage)
 - [Features](#features)
 - [Screenshots](#screenshots)
@@ -95,13 +95,17 @@ Don't like the default filename format presets? Make your own using the <b>Custo
 There are two modes to use:
 
 - <b>Simple</b>: Menu-driven creation where you get to pick format parts to assemble your format.
-- <b>Advanced</b>: You can enter your own output template. See the [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template) for more info on output templates.
+- <b>Advanced</b>: You can enter your own output template. See
+  the [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template) for more info on
+  output templates.
 
-Filename Creator can be accessed through the Downloader, Config Editor, or by passing `-f` or `--filename-creator` as an argument to `main.py`
+Filename Creator can be accessed through the Downloader, Config Editor, or by passing `-f` or `--filename-creator` as an
+argument to `main.py`
 
 ### Config Editor
 
-Customize how yt-dlp-adv works through the <b>Config Editor</b>. View, edit, and reset your config file through user-friendly menus.
+Customize how yt-dlp-adv works through the <b>Config Editor</b>. View, edit, and reset your config file through
+user-friendly menus.
 
 Your config file is stored in script's directory as `config.yml`.[^3]
 
@@ -112,7 +116,8 @@ Config Editor can be accessed by passing `-c` or `--config` as an argument to `m
 <b>Info on development can be found in the [TODO](./TODO) file.</b>
 
 [^2]: Default download locations can be changed in the Config Editor.
-[^3]: It is recommended to use the Config Editor for editing the config file. You are responsible for any edits made outside the Config Editor.
+[^3]: It is recommended to use the Config Editor for editing the config file. You are responsible for any edits made
+outside the Config Editor.
 
 ## Screenshots
 
@@ -127,7 +132,6 @@ Config Editor can be accessed by passing `-c` or `--config` as an argument to `m
 ### Video Qualities
 
 <img src=".github/screenshots/video_qualities.png" alt="">
-
 
 ### Download Status
 
