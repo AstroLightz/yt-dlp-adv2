@@ -5,6 +5,9 @@ workspace.xml
 # venv
 .venv
 
+# idea
+.idea
+
 # User config
 config.yml
 
