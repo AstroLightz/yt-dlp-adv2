@@ -3,8 +3,13 @@ filenamecreator.py : The Filename Creator for creating custom filename formats
 """
 
 from confighandler import ConfigHandler
-from menu import Menu
-from utilities import Utilities
+from menu.menu_filenamecreator import FilenameMenu
+from menu.menu_input import Input
+from menu.menu_misc import MiscMenu
+from menu.menu_problems import FilenameProblem
+from utility.utils_configeditor import ConfigUtilities
+from utility.utils_filenamecreator import FilenameUtilities
+from utility.utils_menu import MenuUtilities
 
 
 class GetPartAt(dict):
@@ -48,7 +53,7 @@ class FilenameCreator:
         self.dwn_mode = dwn_mode
         self.msg: str = ""
 
-        self.ch: ConfigHandler = ConfigHandler(file=Utilities.CONFIG_FILENAME)
+        self.ch: ConfigHandler = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
         self.CONFIG: dict = self.ch.get_config()
 
         if self.dwn_mode <= 0:
@@ -59,17 +64,17 @@ class FilenameCreator:
 
             if self.edit_mode:
                 # Get which download mode to use
-                Menu.FilenameFormat.Custom.fc_dwn_mode(dwn_mode=self.dwn_mode,
-                                                       defaults=[self.CONFIG["default_filename_format"]["single"][0],
-                                                                 self.CONFIG["default_filename_format"]["playlist"][0]])
-                Menu.gap(1)
+                FilenameMenu.Custom.fc_dwn_mode(dwn_mode=self.dwn_mode,
+                                                defaults=[self.CONFIG["default_filename_format"]["single"][0],
+                                                          self.CONFIG["default_filename_format"]["playlist"][0]])
+                MiscMenu.gap(1)
 
                 # Don't allow launching the Downloader if coming from Config Editor
                 if self.dwn_mode == -1:
-                    self.dwn_mode: str = Menu.Input.get_input_custom(opt_range=[1, 2, 3, 'Q'], no_default=True)
+                    self.dwn_mode: str = Input.String.get_input_custom(opt_range=[1, 2, 3, 'Q'], no_default=True)
 
                 else:
-                    self.dwn_mode: str = Menu.Input.get_input_custom(opt_range=[1, 2, 3, 'S', 'Q'], no_default=True)
+                    self.dwn_mode: str = Input.String.get_input_custom(opt_range=[1, 2, 3, 'S', 'Q'], no_default=True)
 
             # Determine which parts are available
             match str(self.dwn_mode):
@@ -77,21 +82,21 @@ class FilenameCreator:
                     # Single Item
 
                     self.dwn_mode = 1
-                    self.parts: dict[str, list[str]] = Utilities.FORMAT_PARTS_S
+                    self.parts: dict[str, list[str]] = FilenameUtilities.FORMAT_PARTS_S
                     self.default_format: list[str] = self.CONFIG["default_filename_format"]["single"]
 
                 case '2':
                     # Playlist
 
                     self.dwn_mode = 2
-                    self.parts: dict[str, list[str]] = Utilities.FORMAT_PARTS_P
+                    self.parts: dict[str, list[str]] = FilenameUtilities.FORMAT_PARTS_P
                     self.default_format: list[str] = self.CONFIG["default_filename_format"]["playlist"]
 
                 case '3':
                     # Clear Defaults
 
-                    Menu.FilenameFormat.Custom.fc_clear_confirm()
-                    confirm: bool = Menu.Input.get_input_bool(default_option=False)
+                    FilenameMenu.Custom.fc_clear_confirm()
+                    confirm: bool = Input.Boolean.get_input_bool(default_option=False)
 
                     if confirm:
                         # Clear defaults
@@ -104,7 +109,7 @@ class FilenameCreator:
 
                         self.pull_config()
 
-                        Menu.Problem.Success.fc_default_changed()
+                        FilenameProblem.Success.fc_default_changed()
 
                     continue
 
@@ -131,14 +136,14 @@ class FilenameCreator:
             self.added_parts: list[int] = []
 
             # Header
-            Menu.FilenameFormat.Custom.fc_header(default_format=self.default_format[0], dwn_mode=self.dwn_mode)
-            Menu.gap(2)
+            FilenameMenu.Custom.fc_header(default_format=self.default_format[0], dwn_mode=self.dwn_mode)
+            MiscMenu.gap(2)
 
             # Get mode
-            Menu.FilenameFormat.Custom.fc_mode()
-            Menu.gap(1)
+            FilenameMenu.Custom.fc_mode()
+            MiscMenu.gap(1)
 
-            self.custom_mode: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
+            self.custom_mode: int = Input.Integer.get_input_num(num_entries=2, default_option=1)
 
             match self.custom_mode:
                 case 1:
@@ -153,21 +158,21 @@ class FilenameCreator:
                 break
 
     def pull_config(self):
-        self.ch = ConfigHandler(file=Utilities.CONFIG_FILENAME)
+        self.ch = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
         self.CONFIG = self.ch.get_config()
 
     def menu_simple(self):
         while True:
-            Menu.FilenameFormat.Custom.fc_simple_options(cur_format=self.current_format[0],
-                                                         format_parts=self.parts, added=self.added_parts,
-                                                         msg=self.msg)
+            FilenameMenu.Custom.fc_simple_options(cur_format=self.current_format[0],
+                                                  format_parts=self.parts, added=self.added_parts,
+                                                  msg=self.msg)
 
             self.msg = ""
 
-            options: list[str] = Utilities.menu_get_options(entries=len(self.parts))
+            options: list[str] = MenuUtilities.menu_get_options(entries=len(self.parts))
             options += ['S', 'R']
 
-            self.part_choice: str = Menu.Input.get_input_custom(opt_range=options, no_default=True)
+            self.part_choice: str = Input.String.get_input_custom(opt_range=options, no_default=True)
 
             # Handle menu nav
             match self.part_choice:
@@ -176,13 +181,13 @@ class FilenameCreator:
 
                     if self.current_format[0] == "" and not self.edit_mode:
                         # Don't allow empty format outside of edit mode
-                        self.msg = Menu.FilenameFormat.Messages.fc_simple_msg_empty_format()
+                        self.msg = FilenameMenu.Messages.fc_simple_msg_empty_format()
                         continue
 
                     # Confirm save
-                    Menu.FilenameFormat.Custom.fc_confirm(cur_format=self.current_format[0])
-                    Menu.gap(1)
-                    self.confirm: bool = Menu.Input.get_input_bool(default_option=False)
+                    FilenameMenu.Custom.fc_confirm(cur_format=self.current_format[0])
+                    MiscMenu.gap(1)
+                    self.confirm: bool = Input.Boolean.get_input_bool(default_option=False)
 
                     if self.confirm and self.default_format[0] == "" and not self.edit_mode:
                         # Prompt for default if none set. Only when used in Downloader
@@ -207,17 +212,17 @@ class FilenameCreator:
                     self.added_parts = []
                     self.current_format = ["", "", ""]
 
-                    self.msg = Menu.FilenameFormat.Messages.fc_simple_msg_reset()
+                    self.msg = FilenameMenu.Messages.fc_simple_msg_reset()
 
                 case _:
 
                     # Get format part
-                    part_choice_int: int = Utilities.input_convert_to_int(input_str=self.part_choice,
-                                                                          entries=len(self.parts))
+                    part_choice_int: int = MenuUtilities.input_convert_to_int(input_str=self.part_choice,
+                                                                              entries=len(self.parts))
 
                     # If part is already added, display error
                     if part_choice_int in self.added_parts:
-                        self.msg = Menu.FilenameFormat.Messages.fc_simple_msg_part_added()
+                        self.msg = FilenameMenu.Messages.fc_simple_msg_part_added()
                         continue
 
                     self.sel_part: list[str] = self.parts[list(self.parts.keys())[part_choice_int - 1]]
@@ -240,17 +245,17 @@ class FilenameCreator:
 
     def menu_advanced(self):
         while True:
-            Menu.FilenameFormat.Custom.fc_adv_prompt()
-            self.adv_format: str = Menu.Input.get_input_format()
+            FilenameMenu.Custom.fc_adv_prompt()
+            self.adv_format: str = Input.String.get_input_format()
 
             # Confirm save
-            Menu.FilenameFormat.Custom.fc_confirm(cur_format=self.adv_format)
-            Menu.gap(1)
-            self.confirm: bool = Menu.Input.get_input_bool(default_option=False)
+            FilenameMenu.Custom.fc_confirm(cur_format=self.adv_format)
+            MiscMenu.gap(1)
+            self.confirm: bool = Input.Boolean.get_input_bool(default_option=False)
 
             if self.confirm:
                 # Convert yt-dlp format to other formats
-                self.current_format: list[str] = Utilities.ytdlp_to_display(ytdlp_format=self.adv_format)
+                self.current_format: list[str] = FilenameUtilities.ytdlp_to_display(ytdlp_format=self.adv_format)
 
                 if self.default_format[0] == "" and not self.edit_mode:
                     # Prompt for default if none set. Only when used in Downloader
@@ -275,11 +280,11 @@ class FilenameCreator:
         self.pull_config()
 
         if not self.edit_mode:
-            Menu.FilenameFormat.Custom.fc_make_default(cur_format=self.current_format[0],
-                                                       dwn_mode=self.dwn_mode,
-                                                       default_format=self.default_format[0])
+            FilenameMenu.Custom.fc_make_default(cur_format=self.current_format[0],
+                                                dwn_mode=self.dwn_mode,
+                                                default_format=self.default_format[0])
 
-            self.make_default: bool = Menu.Input.get_input_bool(default_option=True)
+            self.make_default: bool = Input.Boolean.get_input_bool(default_option=True)
 
         else:
             # Bypass if edit mode
@@ -295,6 +300,6 @@ class FilenameCreator:
             elif self.dwn_mode == 2:
                 self.CONFIG["default_filename_format"]["playlist"] = self.default_format
 
-            Menu.Problem.Success.fc_default_changed()
+            FilenameProblem.Success.fc_default_changed()
 
             self.ch.change_prefs(new_prefs=self.CONFIG)

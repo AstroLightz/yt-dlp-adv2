@@ -7,8 +7,11 @@ from pathlib import PurePosixPath
 
 from ruamel.yaml import YAML
 
-from menu import Menu
-from utilities import Utilities
+from menu.menu_configeditor import ConfigMenu
+from menu.menu_input import Input
+from menu.menu_misc import MiscMenu
+from menu.menu_problems import ConfigProblem
+from utility.utils_configeditor import ConfigUtilities
 
 
 class ConfigError(Exception):
@@ -69,7 +72,7 @@ class ConfigHandler:
 
         # Set default config path if not provided
         if not file:
-            file = Utilities.CONFIG_FILENAME
+            file = ConfigUtilities.CONFIG_FILENAME
 
         self.config_path: str = f"{self.script_dir}/{file}"
 
@@ -83,7 +86,7 @@ class ConfigHandler:
                 f.write("")
 
             self.set_defaults()
-            Menu.Config.created_config(config_path=self.config_path)
+            ConfigMenu.created_config(config_path=self.config_path)
 
         else:
             self.parse_config()
@@ -250,7 +253,7 @@ class ConfigValidator:
 
         except AttributeError:
             err: ConfigError = ConfigError(err_code=2,
-                                           msg=f"'{key}': {Menu.Config.Messages.err_invalid_filename_formats()}")
+                                           msg=f"'{key}': {ConfigMenu.Messages.err_invalid_filename_formats()}")
             self.config_errors.append(err)
 
     def validate_path(self, key: str, value: str):
@@ -312,7 +315,7 @@ class ConfigEditor:
     """
 
     def __init__(self):
-        self.ch: ConfigHandler = ConfigHandler(file=Utilities.CONFIG_FILENAME)
+        self.ch: ConfigHandler = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
 
         # Validate config
         self.errors: list[ConfigError] = ConfigValidator(config_handler=self.ch).config_errors
@@ -335,21 +338,21 @@ class ConfigEditor:
         self.reset_confirm = None
 
         # Header is only shown once
-        Menu.Config.config_header(config_path=self.ch.config_path)
+        ConfigMenu.config_header(config_path=self.ch.config_path)
 
         # Display errors if any
         if len(self.errors) > 0:
-            Menu.Problem.Warning.config_problems(e=self.errors)
+            ConfigProblem.Warning.config_problems(e=self.errors)
 
         else:
-            Menu.gap(2)
+            MiscMenu.gap(2)
 
         # Menu loop
         while True:
 
             # Force reset the config file if it is malformed
             if len(self.errors) > 0 and self.errors[0].err_code == 5:
-                Menu.Problem.Warning.config_force_reset()
+                ConfigProblem.Warning.config_force_reset()
                 self.reset_config()
 
             else:
@@ -362,7 +365,7 @@ class ConfigEditor:
                             self.view_config()
 
                         except (KeyError, TypeError, AttributeError, ValueError, IndexError):
-                            Menu.Problem.Error.config_menu_error()
+                            ConfigProblem.Error.config_menu_error()
                             continue
 
                     case '2':
@@ -371,7 +374,7 @@ class ConfigEditor:
                             self.edit_config()
 
                         except (KeyError, TypeError, AttributeError, ValueError, IndexError):
-                            Menu.Problem.Error.config_menu_error()
+                            ConfigProblem.Error.config_menu_error()
                             continue
 
                     case '3':
@@ -380,16 +383,16 @@ class ConfigEditor:
 
                     case '4':
                         # View Config Path
-                        Menu.Config.view_config_path(path=self.ch.config_path)
+                        ConfigMenu.view_config_path(path=self.ch.config_path)
 
                     case '5':
                         # View Config Problems
 
                         if len(self.errors) > 0:
-                            Menu.Problem.Warning.config_problems(e=self.errors)
+                            ConfigProblem.Warning.config_problems(e=self.errors)
 
                         else:
-                            Menu.Problem.Success.config_no_problems()
+                            ConfigProblem.Success.config_no_problems()
 
                     case 'S':
                         # Run the Downloader
@@ -398,30 +401,30 @@ class ConfigEditor:
 
                     case 'Q':
                         # Exit
-                        Menu.Misc.exit_script()
+                        MiscMenu.exit_script()
                         exit(0)
 
     def main_menu(self):
-        Menu.gap(1)
-        Menu.Config.config_menu(problems=self.errors)
-        Menu.gap(1)
+        MiscMenu.gap(1)
+        ConfigMenu.config_menu(problems=self.errors)
+        MiscMenu.gap(1)
 
         # Get main menu choice
         # self.menu_choice: int = Menu.Input.get_input_num(num_entries=4, default_option=1)
-        self.menu_choice: str = Menu.Input.get_input_custom(opt_range=self.menu_options, default_option=1)
+        self.menu_choice: str = Input.String.get_input_custom(opt_range=self.menu_options, default_option=1)
 
     def view_config(self):
-        Menu.Config.view_config(config=self.cur_prefs, config_path=self.ch.config_path)
+        ConfigMenu.view_config(config=self.cur_prefs, config_path=self.ch.config_path)
 
     def edit_config(self):
         from filenamecreator import FilenameCreator
 
         while True:
-            Menu.Config.preference_menu(config=self.cur_prefs, changes=self.new_prefs)
-            Menu.gap(1)
+            ConfigMenu.preference_menu(config=self.cur_prefs, changes=self.new_prefs)
+            MiscMenu.gap(1)
 
             # Get preference choice
-            self.p_choice: int = Menu.Input.get_input_pref(num_entries=len(self.cur_prefs))
+            self.p_choice: int = Input.Preference.get_input_pref(num_entries=len(self.cur_prefs))
 
             if self.p_choice > 0:
                 # Preference selected
@@ -436,15 +439,16 @@ class ConfigEditor:
                     FilenameCreator(dwn_mode=-1)
 
                     # Reload preferences
-                    self.ch = ConfigHandler(file=Utilities.CONFIG_FILENAME)
+                    self.ch = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
                     self.cur_prefs = self.ch.get_config()
                     break
 
-                Menu.Config.preference_change(p_key=pref_key, p_value=pref_val, p_type=type(def_val))
-                Menu.gap(1)
+                ConfigMenu.preference_change(p_key=pref_key, p_value=pref_val, p_type=type(def_val))
+                MiscMenu.gap(1)
 
                 # Get new value
-                self.p_new_value = Menu.Input.get_input_pref_value(p_key=pref_key, p_value=pref_val, d_value=def_val)
+                self.p_new_value = Input.Preference.get_input_pref_value(p_key=pref_key, p_value=pref_val,
+                                                                         d_value=def_val)
 
                 # Add to changes dict
                 self.new_prefs[pref_key] = self.p_new_value
@@ -463,7 +467,7 @@ class ConfigEditor:
                 # Check for errors
                 self.errors = ConfigValidator(config_handler=self.ch).config_errors
 
-                Menu.Config.preferences_saved(config_path=self.ch.config_path)
+                ConfigMenu.preferences_saved(config_path=self.ch.config_path)
                 break
 
             elif self.p_choice == -2:
@@ -471,14 +475,14 @@ class ConfigEditor:
 
                 # If any changes were made, prompt
                 if len(self.new_prefs) > 0:
-                    Menu.Config.unsaved_changes()
+                    ConfigMenu.unsaved_changes()
 
                     # Get confirmation
-                    self.cancel_confirm = Menu.Input.get_input_bool(default_option=False)
+                    self.cancel_confirm = Input.Boolean.get_input_bool(default_option=False)
 
                     # If confirmed, reset changes
                     if self.cancel_confirm:
-                        Menu.Config.changes_cancelled()
+                        ConfigMenu.changes_cancelled()
                         self.new_prefs = {}
                         break
 
@@ -492,7 +496,7 @@ class ConfigEditor:
         try:
             if self.cur_prefs == self.ch.default_vals:
                 # User config is already default
-                Menu.Problem.Error.pref_already_default()
+                ConfigProblem.Error.pref_already_default()
                 return
 
             # Skip confirmation if config file is deformed
@@ -500,10 +504,10 @@ class ConfigEditor:
                 self.reset_confirm = True
 
             else:
-                Menu.Config.reset_defaults(config=self.cur_prefs, defaults=self.ch.default_vals)
+                ConfigMenu.reset_defaults(config=self.cur_prefs, defaults=self.ch.default_vals)
 
                 # Get confirmation
-                self.reset_confirm = Menu.Input.get_input_bool(default_option=False)
+                self.reset_confirm = Input.Boolean.get_input_bool(default_option=False)
 
         except (KeyError, TypeError, AttributeError, ValueError, IndexError):
             # Skip confirmation if an error prevents confirmation
@@ -514,13 +518,13 @@ class ConfigEditor:
             self.ch.set_defaults()
 
             # Reload preferences
-            self.ch = ConfigHandler(file=Utilities.CONFIG_FILENAME)
+            self.ch = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
             self.cur_prefs = self.ch.get_config()
 
             # Check for errors
             self.errors = ConfigValidator(config_handler=self.ch).config_errors
 
-            Menu.Config.preferences_reset()
+            ConfigMenu.preferences_reset()
 
         else:
-            Menu.Config.reset_cancelled()
+            ConfigMenu.reset_cancelled()

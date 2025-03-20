@@ -10,8 +10,18 @@ from wand.image import Image
 from confighandler import ConfigHandler, ConfigValidator, ConfigError
 from downloader import Downloader
 from filenamecreator import FilenameCreator, GetPartAt
-from menu import Menu
-from utilities import Utilities
+
+# Menus
+from menu.menu_downloader import DwnMenu
+from menu.menu_filenamecreator import FilenameMenu
+from menu.menu_input import Input
+from menu.menu_misc import MiscMenu, ArgumentMenu
+from menu.menu_problems import DwnProblem, MiscProblem, ConfigProblem
+
+# Utilities
+from utility.utils_downloader import DwnUtilities
+from utility.utils_filenamecreator import FilenameUtilities
+from utility.utils_misc import MiscUtilities
 from videoquality import VideoQuality
 
 
@@ -82,33 +92,33 @@ class Backend:
 
             if errors:
                 # Display all errors
-                Menu.Problem.Error.config_error(e=errors, config_path=self.ch.config_path)
+                ConfigProblem.Error.config_error(e=errors, config_path=self.ch.config_path)
                 exit(1)
 
         except ConfigError as e:
-            Menu.Problem.Error.config_error(e=e, config_path=self.ch.config_path)
+            ConfigProblem.Error.config_error(e=e, config_path=self.ch.config_path)
             exit(1)
 
         # Display program header and version if enabled
         if self.CONFIG["show_header"]:
-            Menu.Main.program_header(v=Utilities.VERSION if self.CONFIG["show_version"] else None)
+            DwnMenu.Main.program_header(v=MiscUtilities.VERSION if self.CONFIG["show_version"] else None)
 
             # Display between header and main menu if header is shown
             if self.bypass_defaults:
-                Menu.Arguments.defaults_bypassed()
+                ArgumentMenu.defaults_bypassed()
 
             else:
-                Menu.gap(2)
+                MiscMenu.gap(2)
 
         elif self.bypass_defaults:
             # Display before main menu
-            Menu.Arguments.defaults_bypassed()
+            ArgumentMenu.defaults_bypassed()
 
-        Menu.Main.main_menu()
-        Menu.gap(1)
+        DwnMenu.Main.main_menu()
+        MiscMenu.gap(1)
 
         # Download Type
-        self.dwn_type: int = Menu.Input.get_input_num(num_entries=3, default_option=1)
+        self.dwn_type: int = Input.Integer.get_input_num(num_entries=3, default_option=1)
 
         # File Format
         # Get download directory from config
@@ -159,10 +169,11 @@ class Backend:
                 self.ff_preset: int = 2
 
                 self.filename_format: list[str] = (
-                    Utilities.FORMAT_PRESETS_S)[list(Utilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1]]
+                    FilenameUtilities.FORMAT_PRESETS_S)[
+                    list(FilenameUtilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1]]
 
                 # Add key to list
-                self.filename_format.insert(0, list(Utilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1])
+                self.filename_format.insert(0, list(FilenameUtilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1])
 
             else:
                 self.menu_filename_format()
@@ -170,14 +181,14 @@ class Backend:
             # Use default if present
 
             self.filename_format: list[str] = list(default_format)
-            Menu.FilenameFormat.default_format(default_format=self.filename_format[0])
+            FilenameMenu.default_format(default_format=self.filename_format[0])
 
         # URL
         self.menu_get_url()
 
         # If download type is Video, ask for video quality. Does not support playlists currently.
         if self.dwn_type == 1 and self.item_count == 1:
-            Menu.Video.video_quality_status()
+            DwnMenu.Video.video_quality_status()
             self.menu_video_quality()
 
         # Confirmation
@@ -193,10 +204,10 @@ class Backend:
     ### Get file formats ###
 
     def menu_video(self):
-        Menu.Video.video_menu()
-        Menu.gap(1)
+        DwnMenu.Video.video_menu()
+        MiscMenu.gap(1)
 
-        self.file_format: int = Menu.Input.get_input_num(num_entries=3, default_option=1)
+        self.file_format: int = Input.Integer.get_input_num(num_entries=3, default_option=1)
 
         match self.file_format:
             case 1:
@@ -220,7 +231,7 @@ class Backend:
 
         # Skip if no qualities found
         if not self.video_qualities:
-            Menu.Problem.Warning.no_video_qualities()
+            DwnProblem.Warning.no_video_qualities()
             return
 
         # If default video quality is set and is available, use it
@@ -229,7 +240,7 @@ class Backend:
             if self.CONFIG["default_video_quality"] and self.CONFIG["default_video_quality"] in self.video_qualities:
                 self.video_quality = self.CONFIG["default_video_quality"]
 
-                Menu.Video.default_quality(quality=self.CONFIG["default_video_quality"])
+                DwnMenu.Video.default_quality(quality=self.CONFIG["default_video_quality"])
                 return
 
             elif self.CONFIG["default_video_quality"]:
@@ -237,23 +248,23 @@ class Backend:
                 self.video_quality = VideoQuality.next_best_quality(v_quality=self.CONFIG["default_video_quality"],
                                                                     available=self.video_qualities)
 
-                Menu.Problem.Warning.default_quality_unavailable(quality=self.CONFIG["default_video_quality"],
-                                                                 next_quality=self.video_quality)
+                DwnProblem.Warning.default_quality_unavailable(quality=self.CONFIG["default_video_quality"],
+                                                               next_quality=self.video_quality)
                 return
 
-        Menu.Problem.Success.video_qualities_found(num_qualities=len(self.video_qualities))
-        Menu.Video.video_quality(qualities=self.video_qualities)
-        Menu.gap(1)
+        DwnProblem.Success.video_qualities_found(num_qualities=len(self.video_qualities))
+        DwnMenu.Video.video_quality(qualities=self.video_qualities)
+        MiscMenu.gap(1)
 
         # Get video quality from the list
-        self.video_quality: str = self.video_qualities[Menu.Input.get_input_long(
+        self.video_quality: str = self.video_qualities[Input.Integer.get_input_long(
             num_entries=len(self.video_qualities), default_option=1) - 1]
 
     def menu_audio(self):
-        Menu.Audio.audio_menu()
-        Menu.gap(1)
+        DwnMenu.Audio.audio_menu()
+        MiscMenu.gap(1)
 
-        self.file_format: int = Menu.Input.get_input_num(num_entries=4, default_option=1)
+        self.file_format: int = Input.Integer.get_input_num(num_entries=4, default_option=1)
 
         match self.file_format:
             case 1:
@@ -275,10 +286,10 @@ class Backend:
         self.download_dir += f"{self.file_ext.upper()}/"
 
     def menu_artwork(self):
-        Menu.Artwork.artwork_menu()
-        Menu.gap(1)
+        DwnMenu.Artwork.artwork_menu()
+        MiscMenu.gap(1)
 
-        self.file_format: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
+        self.file_format: int = Input.Integer.get_input_num(num_entries=2, default_option=1)
 
         match self.file_format:
             case 1:
@@ -294,10 +305,10 @@ class Backend:
     ### Get item count ###
 
     def menu_item_count(self):
-        Menu.Main.item_count()
-        Menu.gap(1)
+        DwnMenu.Main.item_count()
+        MiscMenu.gap(1)
 
-        self.item_count: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
+        self.item_count: int = Input.Integer.get_input_num(num_entries=2, default_option=1)
 
         match self.item_count:
             case 1:
@@ -313,10 +324,10 @@ class Backend:
     def menu_filename_format(self):
 
         # Get type of filename format
-        Menu.FilenameFormat.format_mode()
-        Menu.gap(1)
+        FilenameMenu.format_mode()
+        MiscMenu.gap(1)
 
-        self.ff_mode: int = Menu.Input.get_input_num(num_entries=2, default_option=1)
+        self.ff_mode: int = Input.Integer.get_input_num(num_entries=2, default_option=1)
 
         match self.ff_mode:
             case 1:
@@ -325,33 +336,37 @@ class Backend:
                 match self.item_count:
                     case 1:
                         # Single item
-                        Menu.FilenameFormat.Presets.preset_menu(presets=list(Utilities.FORMAT_PRESETS_S.keys()))
-                        Menu.gap(1)
+                        FilenameMenu.Presets.preset_menu(presets=list(FilenameUtilities.FORMAT_PRESETS_S.keys()))
+                        MiscMenu.gap(1)
 
-                        self.ff_preset: int = Menu.Input.get_input_num(
-                            num_entries=len(Utilities.FORMAT_PRESETS_S), default_option=1)
+                        self.ff_preset: int = Input.Integer.get_input_num(
+                            num_entries=len(FilenameUtilities.FORMAT_PRESETS_S), default_option=1)
 
                         # Get format list from dict
                         self.filename_format: list[str] = (
-                            Utilities.FORMAT_PRESETS_S)[list(Utilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1]]
+                            FilenameUtilities.FORMAT_PRESETS_S)[
+                            list(FilenameUtilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1]]
 
                         # Add filename format key to list
-                        self.filename_format.insert(0, list(Utilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1])
+                        self.filename_format.insert(0,
+                                                    list(FilenameUtilities.FORMAT_PRESETS_S.keys())[self.ff_preset - 1])
 
                     case 2:
                         # Playlist
-                        Menu.FilenameFormat.Presets.preset_menu(presets=list(Utilities.FORMAT_PRESETS_P.keys()))
-                        Menu.gap(1)
+                        FilenameMenu.Presets.preset_menu(presets=list(FilenameUtilities.FORMAT_PRESETS_P.keys()))
+                        MiscMenu.gap(1)
 
-                        self.ff_preset: int = Menu.Input.get_input_num(
-                            num_entries=len(Utilities.FORMAT_PRESETS_P), default_option=1)
+                        self.ff_preset: int = Input.Integer.get_input_num(
+                            num_entries=len(FilenameUtilities.FORMAT_PRESETS_P), default_option=1)
 
                         # Get format list from dict
                         self.filename_format: list[str] = (
-                            Utilities.FORMAT_PRESETS_P)[list(Utilities.FORMAT_PRESETS_P.keys())[self.ff_preset - 1]]
+                            FilenameUtilities.FORMAT_PRESETS_P)[
+                            list(FilenameUtilities.FORMAT_PRESETS_P.keys())[self.ff_preset - 1]]
 
                         # Add filename format key to list
-                        self.filename_format.insert(0, list(Utilities.FORMAT_PRESETS_P.keys())[self.ff_preset - 1])
+                        self.filename_format.insert(0,
+                                                    list(FilenameUtilities.FORMAT_PRESETS_P.keys())[self.ff_preset - 1])
 
             case 2:
                 # Custom
@@ -361,19 +376,19 @@ class Backend:
     ### Get URL ###
 
     def menu_get_url(self):
-        Menu.Main.get_url()
+        DwnMenu.Main.get_url()
 
-        self.yt_url: str = Menu.Input.get_input_url()
+        self.yt_url: str = Input.String.get_input_url()
 
     def menu_confirmation(self):
-        Menu.Main.confirmation_screen(dwn_type=self.dwn_type, file_format=self.file_format,
-                                      item_count=self.item_count, ff_mode=self.ff_mode,
-                                      filename_format=self.filename_format, video_quality=self.video_quality)
+        DwnMenu.Main.confirmation_screen(dwn_type=self.dwn_type, file_format=self.file_format,
+                                         item_count=self.item_count, ff_mode=self.ff_mode,
+                                         filename_format=self.filename_format, video_quality=self.video_quality)
 
-        choice: bool = Menu.Input.get_input_bool(default_option=False)
+        choice: bool = Input.Boolean.get_input_bool(default_option=False)
 
         if not choice:
-            Menu.Misc.download_aborted()
+            DwnProblem.Warning.download_aborted()
             exit()
 
     ### Download ###
@@ -393,38 +408,38 @@ class Backend:
             if self.num_items > 1:
 
                 # URL is a playlist
-                Menu.Problem.Warning.url_is_playlist()
-                choice: bool = Menu.Input.get_input_bool(default_option=True)
+                DwnProblem.Warning.url_is_playlist()
+                choice: bool = Input.Boolean.get_input_bool(default_option=True)
 
                 if not choice:
                     # User does not want to switch to playlist mode
-                    Menu.Problem.Error.incorrect_mode_playlist()
+                    DwnProblem.Error.incorrect_mode_playlist()
                     return False
 
                 else:
                     # User wants to switch to playlist mode
-                    Menu.Problem.Success.mode_change_playlist()
+                    DwnProblem.Success.mode_change_playlist()
                     self.item_count = 2
                     return True
 
             # Check if file already exists
-            elif Utilities.exists_on_disk(path=file_path):
+            elif DwnUtilities.exists_on_disk(path=file_path):
 
                 # File already exists
-                Menu.Problem.Warning.duplicate_single_item(title=self.titles[0])
-                choice: bool = Menu.Input.get_input_bool(default_option=False)
+                DwnProblem.Warning.duplicate_single_item(title=self.titles[0])
+                choice: bool = Input.Boolean.get_input_bool(default_option=False)
 
                 if choice:
                     # User wants to re-download
                     # Delete previous file
-                    Menu.gap(1)
-                    Menu.Download.redownloading_item(item=self.titles[0])
-                    Utilities.delete_from_disk(path=file_path)
+                    MiscMenu.gap(1)
+                    DwnMenu.Download.redownloading_item(item=self.titles[0])
+                    DwnUtilities.delete_from_disk(path=file_path)
                     return True
 
                 else:
                     # User does not want to re-download
-                    Menu.Problem.Success.duplicate_single_item(path=file_path)
+                    DwnProblem.Success.duplicate_single_item(path=file_path)
                     return False
 
         # Playlist checks
@@ -434,39 +449,39 @@ class Backend:
             if self.num_items == 1:
 
                 # URL is a single item
-                Menu.Problem.Warning.url_is_single_item()
-                choice: bool = Menu.Input.get_input_bool(default_option=True)
+                DwnProblem.Warning.url_is_single_item()
+                choice: bool = Input.Boolean.get_input_bool(default_option=True)
 
                 if not choice:
 
                     # User does not want to switch to single item mode
-                    Menu.Problem.Error.incorrect_mode_single()
+                    DwnProblem.Error.incorrect_mode_single()
                     return False
 
                 else:
                     # User wants to switch to single item mode
-                    Menu.Problem.Success.mode_change_single()
+                    DwnProblem.Success.mode_change_single()
                     self.item_count = 1
                     return True
 
             # Check if playlist already exists
-            elif Utilities.exists_on_disk(path=self.download_dir + self.playlist_name):
+            elif DwnUtilities.exists_on_disk(path=self.download_dir + self.playlist_name):
 
                 # Playlist already exists
-                Menu.Problem.Warning.duplicate_playlist(title=self.playlist_name)
-                choice: bool = Menu.Input.get_input_bool(default_option=False)
+                DwnProblem.Warning.duplicate_playlist(title=self.playlist_name)
+                choice: bool = Input.Boolean.get_input_bool(default_option=False)
 
                 if choice:
                     # User wants to re-download
                     # Delete previous playlist
-                    Menu.gap(1)
-                    Menu.Download.redownloading_item(item=self.playlist_name)
-                    Utilities.delete_from_disk(path=self.download_dir + self.playlist_name)
+                    MiscMenu.gap(1)
+                    DwnMenu.Download.redownloading_item(item=self.playlist_name)
+                    DwnUtilities.delete_from_disk(path=self.download_dir + self.playlist_name)
                     return True
 
                 else:
                     # User does not want to re-download
-                    Menu.Problem.Success.duplicate_playlist(path=self.download_dir)
+                    DwnProblem.Success.duplicate_playlist(path=self.download_dir)
                     return False
 
         # No Issues
@@ -506,8 +521,8 @@ class Backend:
                 # Error
                 n_status: int = -1
 
-        Menu.Download.download_status(cur_item=cur_item, total_items=total_items, downloaded=downloaded,
-                                      total=total, dwn_percent=dwn_percent, status=n_status, title=title)
+        DwnMenu.Download.download_status(cur_item=cur_item, total_items=total_items, downloaded=downloaded,
+                                         total=total, dwn_percent=dwn_percent, status=n_status, title=title)
         stdout.flush()
 
         return n_status, cur_item
@@ -554,18 +569,18 @@ class Backend:
                 )
 
             # Delete original thumbnail
-            Utilities.delete_from_disk(path=self.download_path)
+            DwnUtilities.delete_from_disk(path=self.download_path)
 
             # For PNG Downloads, remove any stray JPGs
             if self.file_ext.upper() == "PNG":
-                if Utilities.exists_on_disk(path=self.download_path.replace(".webp", ".jpg")):
-                    Utilities.delete_from_disk(path=self.download_path.replace(".webp", ".jpg"))
+                if DwnUtilities.exists_on_disk(path=self.download_path.replace(".webp", ".jpg")):
+                    DwnUtilities.delete_from_disk(path=self.download_path.replace(".webp", ".jpg"))
 
             # Update path
             self.download_path = f"{self.download_dir}{titles[i]}.{self.file_ext}"
 
             # Display status
-            Menu.Download.download_status_a(cur_item=i + 1, total_items=len(titles), title=self.titles[i])
+            DwnMenu.Download.download_status_a(cur_item=i + 1, total_items=len(titles), title=self.titles[i])
 
     def download(self):
         """
@@ -573,20 +588,20 @@ class Backend:
         :return:
         """
 
-        Menu.Download.processing_download()
+        DwnMenu.Download.processing_download()
 
         # Get number of items
         self.num_items: int = Downloader.get_title_count(self.yt_url)
 
         # Get the required info from the filename format
-        self.required_info: dict[str, list[str]] = Utilities.get_required(filename_format=self.filename_format)
+        self.required_info: dict[str, list[str]] = DwnUtilities.get_required(filename_format=self.filename_format)
 
         # Extract info from URL
         self.extracted_info: dict[str, list[str]] = Downloader.extract_info(self.yt_url, required=self.required_info)
 
         # Convert all info to a safe version, replacing invalid characters with underscores
         for key, value in self.extracted_info.items():
-            self.sanitized_info[key] = Utilities.sanitize_list(unclean_list=value)
+            self.sanitized_info[key] = DwnUtilities.sanitize_list(unclean_list=value)
 
         if "title" in list(self.extracted_info.keys()):
             self.titles: list[str] = self.extracted_info["title"]
@@ -596,7 +611,7 @@ class Backend:
             # Fallback to video ID if no titles
 
             self.titles: list[str] = Downloader.get_video_id(url=self.yt_url)
-            self.titles_safe: list[str] = Utilities.sanitize_list(unclean_list=self.titles)
+            self.titles_safe: list[str] = DwnUtilities.sanitize_list(unclean_list=self.titles)
 
         # If a playlist, get the playlist name
         if self.item_count == 2:
@@ -614,7 +629,7 @@ class Backend:
                                                             playlist_name=self.playlist_name,
                                                             video_quality=self.video_quality)
 
-        Menu.Download.starting_download(count=self.num_items)
+        DwnMenu.Download.starting_download(count=self.num_items)
 
         # Download
         try:
@@ -628,7 +643,7 @@ class Backend:
                                                        progress_callback=Backend.download_callback)
 
         except Exception as e:
-            Menu.Problem.Error.error_msg_crash(error=e)
+            MiscProblem.Error.error_msg_crash(error=e)
             exit(1)
 
         if dwn_status == 0:
@@ -640,7 +655,7 @@ class Backend:
                     self.construct_paths(cur_item=cur_item)
 
                 except Exception as e:
-                    Menu.Problem.Error.error_msg_crash(error=e)
+                    MiscProblem.Error.error_msg_crash(error=e)
                     exit(1)
 
             # For Artwork downloads, construct download path for all items
@@ -663,18 +678,18 @@ class Backend:
                     self.dwn_size: str = Downloader.get_download_size(path=self.download_dir + self.playlist_name,
                                                                       unit="auto")
 
-            Menu.Download.all_downloads_complete(completed=self.num_items, total=self.num_items,
-                                                 path_dir=self.download_dir, size=self.dwn_size)
+            DwnMenu.Download.all_downloads_complete(completed=self.num_items, total=self.num_items,
+                                                    path_dir=self.download_dir, size=self.dwn_size)
 
         except Exception as e:
             # Catch any errors when getting download size
-            Menu.Problem.Error.dwn_size_error(error=e)
+            DwnProblem.Error.dwn_size_error(error=e)
 
             # Display downloads complete without size
-            Menu.Download.all_downloads_complete(completed=self.num_items, total=self.num_items,
-                                                 path_dir=self.download_dir)
+            DwnMenu.Download.all_downloads_complete(completed=self.num_items, total=self.num_items,
+                                                    path_dir=self.download_dir)
 
         # Display failed downloads
         if len(self.failed_downloads) > 0:
-            Menu.gap(1)
-            Menu.Download.failed_downloads_list(failed=len(self.failed_downloads), items=self.failed_downloads)
+            MiscMenu.gap(1)
+            DwnMenu.Download.failed_downloads_list(failed=len(self.failed_downloads), items=self.failed_downloads)

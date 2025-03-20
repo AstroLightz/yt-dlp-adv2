@@ -1,5 +1,6 @@
 ### ADD
 - Add filename formats for Playlist Directory names
+- Try to add support for Python 3.11
 
 ### FIX
 - Support playlists for video quality

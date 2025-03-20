@@ -25,7 +25,8 @@ This Script utilizes <b>[yt-dlp](https://github.com/yt-dlp/yt-dlp)</b> for downl
 
 - An operating system with a <b>Unix filesystem</b>.[^1]
 
-- <b>Python 3.13</b> or higher
+- <b>Python 3.12</b> or higher
+- <b>FFmpeg</b>
 - <b>ImageMagick</b>
 
 [^1]: Windows WSL and macOS untested

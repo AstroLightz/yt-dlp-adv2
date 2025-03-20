@@ -6,7 +6,10 @@ main.py is the main entry point for the program
 - Backend is in backend.py
 - Menu print messages and input is in menu.py
 - yt-dlp handling is in downloader.py
-- Utility functions are in utilities.py
+- Filename Creator is in filenamecreator.py
+- Config Handling is in confighandler.py
+- Utilities can be found in their respective files in the utility folder
+- Menus can be found in their respective files in the menu folder
 
 This project is licensed under the Unlicensed license. You may do whatever you want with it.
 """
@@ -17,8 +20,9 @@ import sys
 from backend import Backend
 from confighandler import ConfigEditor
 from filenamecreator import FilenameCreator
-from menu import Menu
-from utilities import Utilities
+from menu.menu_misc import MiscMenu, ArgumentMenu
+from menu.menu_problems import MiscProblem
+from utility.utils_misc import MiscUtilities
 
 # Arguments
 _BYPASS_DEFAULTS: bool = False
@@ -47,13 +51,13 @@ def handle_args() -> int:
 
             if arg in ("-h", "--help") and num_args == 1:
                 # Print help menu
-                Menu.Arguments.help_menu()
+                ArgumentMenu.help_menu()
                 return 1
 
             elif arg in ("-v", "--version") and num_args == 1:
                 # Print version
-                Menu.Arguments.show_version(v=Utilities.VERSION)
-                Menu.Arguments.show_commits(g_commits=Utilities.COMMITS_LINK)
+                ArgumentMenu.show_version(v=MiscUtilities.VERSION)
+                ArgumentMenu.show_commits(g_commits=MiscUtilities.COMMITS_LINK)
                 return 1
 
             elif arg in ("-c", "--config") and num_args == 1:
@@ -77,13 +81,13 @@ def handle_args() -> int:
 
             else:
                 # Assume too many arguments
-                Menu.Problem.Error.error_msg(error=Exception(f"Too many arguments: Expected 1, but got {num_args}."))
+                MiscProblem.Error.error_msg(error=Exception(f"Too many arguments: Expected 1, but got {num_args}."))
                 return 1
 
         return 0
 
     except getopt.error as e:
-        Menu.Problem.Error.error_msg(error=Exception(f"{e}. Try 'main.py --help' for more information."))
+        MiscProblem.Error.error_msg(error=Exception(f"{e}. Try 'main.py --help' for more information."))
         return 1
 
 
@@ -96,5 +100,5 @@ if __name__ == "__main__":
 
     # Handle abrupt exits, such as CTRL+C or CTRL+D
     except (KeyboardInterrupt, EOFError):
-        Menu.gap(1)
-        Menu.Misc.exit_script()
+        MiscMenu.gap(1)
+        MiscMenu.exit_script()
