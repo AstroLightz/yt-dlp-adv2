@@ -121,25 +121,6 @@ class Downloader:
                 return ""
 
     @staticmethod
-    def get_playlist_name(url: str) -> str:
-
-        ydl_args = {
-            "logger": Downloader.QuietLogger(),
-            "extract_flat": True,
-            "force_generic_extractor": False,
-            "quiet": True,
-        }
-
-        with yt.YoutubeDL(ydl_args) as ydl:
-            try:
-                playlist = ydl.extract_info(url, download=False)
-                return str(playlist["title"])
-
-            except Exception as e:
-                print(f"Error: {e}")
-                return ""
-
-    @staticmethod
     def get_video_id(url: str) -> list[str]:
         """
         Get video id
@@ -284,6 +265,42 @@ class Downloader:
         return ytdlp_options
 
     @staticmethod
+    def extract_p_info(yt_url: str, required: dict[str, list[str]]) -> dict[str, list[str]]:
+        """
+        Extract Playlist info from a YouTube URL
+        :param yt_url: URL
+        :param required: Dictionary of required info to extract
+        :return: Returns a dictionary of all extracted info as field: [value for each video]
+        """
+
+        # Setup yt-dlp args
+        ydl_args = {
+            "logger": Downloader.QuietLogger(),
+            "extract_flat": True,
+            "force_generic_extractor": False,
+            "quiet": True,
+        }
+
+        with yt.YoutubeDL(ydl_args) as ydl:
+            try:
+                result = ydl.extract_info(yt_url, download=False)
+
+                # Loop through results and extract info
+                for k in list(required.keys()):
+                    info = result.get(k, "Unknown")
+
+                    # If playlist uploader is null, fallback to first video uploader
+                    if (info == "Unknown" or info is None) and k == "uploader":
+                        info = result["entries"][0].get("uploader", "Unknown")
+
+                    required[k].append(info)
+
+            except Exception as e:
+                print(f"Error: {e}")
+
+        return required
+
+    @staticmethod
     def extract_info(yt_url: str, required: dict[str, list[str]]) -> dict[str, list[str]]:
         """
         Extract all info from a YouTube URL
@@ -313,7 +330,15 @@ class Downloader:
                 # Loop through the entries and extract info
                 for entry in entries:
                     for k in list(required.keys()):
-                        required[k].append(entry.get(k, "Unknown"))
+
+                        # If playlist key is passed, get it directly from result
+                        if k in ["playlist_title", "playlist_uploader"]:
+                            info = result.get(k, "Unknown")
+
+                        else:
+                            info = entry.get(k, "Unknown")
+
+                        required[k].append(info)
 
             except Exception as e:
                 print(f"Error: {e}")

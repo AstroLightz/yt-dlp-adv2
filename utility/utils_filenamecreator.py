@@ -39,7 +39,7 @@ class FilenameUtilities:
         ]
     }
 
-    # Format Parts
+    # Filename Format Parts
     # Pair: Format: [f-string format, yt-dlp format]
     FORMAT_PARTS_S: dict[str, list[str]] = {
         "(title)": [
@@ -80,18 +80,59 @@ class FilenameUtilities:
         ],
 
         "(playlist name)": [
-            "{playlist}",
-            "%(playlist)s"
+            "{playlist_title}",
+            "%(playlist_title)s"
         ],
 
         "(playlist uploader)": [
             "{playlist_uploader}",
             "%(playlist_uploader)s"
+        ]
+    }
+
+    # Playlist name presets
+    PLAYLIST_NAME_PRESETS: dict[str, list[str]] = {
+        "(uploader) - (title)": [
+            "{uploader} - {title}",
+            "%(uploader)s - %(title)s"
+        ],
+
+        "(title)": [
+            "{title}",
+            "%(title)s"
+        ],
+
+        "(item #) - (uploader) - (title)": [
+            "{playlist_count} - {uploader} - {title}",
+            "%(playlist_count)s - %(uploader)s - %(title)s"
+        ],
+
+        "(item #) - (title)": [
+            "{playlist_count} - {title}",
+            "%(playlist_count)s - %(title)s"
+        ]
+    }
+
+    # Playlist name format parts
+    PLAYLIST_NAME_FORMAT_PARTS: dict[str, list[str]] = {
+        "(playlist name)": [
+            "{title}",
+            "%(title)s"
+        ],
+
+        "(playlist uploader)": [
+            "{uploader}",
+            "%(uploader)s"
+        ],
+
+        "(# Items)": [
+            "{playlist_count}",
+            "%(playlist_count)s"
         ],
 
         "(playlist id)": [
-            "{playlist_id}",
-            "%(playlist_id)s"
+            "{id}",
+            "%(id)s"
         ]
     }
 

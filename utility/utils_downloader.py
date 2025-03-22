@@ -10,6 +10,33 @@ class DwnUtilities:
     """
 
     @staticmethod
+    def get_playlist_name(url: str, pn_format: list[str]) -> str:
+        """
+        Get the playlist name
+        :param url: URL
+        :param pn_format: Playlist name format list
+        :return: Playlist name
+        """
+        from downloader import Downloader
+        from filenamecreator import GetPartAt
+
+        # Get required parts
+        required: dict[str, list[str]] = DwnUtilities.get_required(pn_format)
+
+        # Extract info
+        extracted: dict[str, list[str]] = Downloader.extract_p_info(yt_url=url, required=required)
+
+        # Sanitize
+        sanitized: dict[str, list[str]] = {}
+        for k, v in extracted.items():
+            sanitized[k] = DwnUtilities.sanitize_list(unclean_list=v)
+
+        # Construct playlist name
+        playlist: str = pn_format[1].format_map(GetPartAt(sanitized, index=0))
+
+        return playlist
+
+    @staticmethod
     def get_required(filename_format: list[str]) -> dict[str, list[str]]:
         """
         Get required info needed to extract from URL

@@ -17,6 +17,8 @@ This Script utilizes <b>[yt-dlp](https://github.com/yt-dlp/yt-dlp)</b> for downl
     - [Manual Installation](#manual-installation)
 - [Usage](#usage)
 - [Features](#features)
+  - [Filename Creator / Playlist Name Creator](#filename-creator--playlist-name-creator)
+  - [Config Editor](#config-editor)
 - [Screenshots](#screenshots)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
@@ -76,6 +78,7 @@ python3 main.py
 - Download videos, audio, and thumbnails from YouTube
 - Download playlists or single items
 - Choose what file format to use
+- If you are downloading a playlist, choose a playlist name format
 - Choose filename format to use
     - e.g. (uploader) - (title).(ext)
 
@@ -89,7 +92,7 @@ python3 main.py
 - Custom download status messages
 - See overview of download after download is complete
 
-### Filename Creator
+### Filename Creator / Playlist Name Creator
 
 Don't like the default filename format presets? Make your own using the <b>Custom</b> option in the menu.
 
@@ -100,8 +103,15 @@ There are two modes to use:
   the [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template) for more info on
   output templates.
 
-Filename Creator can be accessed through the Downloader, Config Editor, or by passing `-f` or `--filename-creator` as an
+Filename Creator can be accessed through the Downloader, Config Editor, or by passing `-f` or `--format-editor` as an
 argument to `main.py`
+
+
+Playlist Name Creator, like Filename Creator, allows you to make your own playlist name format.
+Choose from <b>Simple</b> or <b>Advanced</b> mode to create your playlist name format.
+
+Playlist Name Creator can be accessed through the Downloader when downloading a Playlist, Config Editor, or by
+passing `-f` or `--format-editor` as an argument to `main.py`
 
 ### Config Editor
 

@@ -3,7 +3,7 @@ import os.path
 from utility.utils_configeditor import ConfigUtilities
 from videoquality import VideoQuality
 from .menu_colors import *
-from .menu_filenamecreator import FilenameMenu
+from .menu_filenamecreator import FilenameMenu, PlaylistNameMenu
 
 
 class ConfigMenu:
@@ -67,38 +67,18 @@ class ConfigMenu:
 
         for key, value in config.items():
             if key == "default_filename_format":
-                # Show custom display
+                # Use Filename Format display
                 FilenameMenu.display_ff_full(ff_pref=value)
+
+            elif key == "default_playlist_name_format":
+                # Use Playlist Name Format display
+                PlaylistNameMenu.display_pn_full(pn_pref=value)
 
             else:
                 # Remove underscores and capitalize first letter
                 t_key = key.replace("_", " ").title()
 
                 print(f"  - {t_key}: {col(ConfigUtilities.pref_display_value(p_value=value), 'magenta')}")
-
-    class Messages:
-        """
-        Messages for Config Editor
-        """
-
-        @staticmethod
-        def err_invalid_filename_formats() -> str:
-            """
-            String for invalid default filename formats in config
-            :return: error msg
-            """
-            return """Invalid default filename format.
-
-Default filename format in config file should look like:
-default_filename_format:
-  single:
-  - ''
-  - ''
-  - ''
-  playlist:
-  - ''
-  - ''
-  - ''"""
 
     @staticmethod
     def preference_menu(config: dict, changes: dict) -> None:
@@ -118,9 +98,12 @@ default_filename_format:
 
             # For default filename format, show custom message
             if key == "default_filename_format":
-                # print(f"  {col(str(i + 1), 'cyan')}) {t_key}: "
-                #       f"{col("Edit with Filename Creator", "yellow")} ", end="")
+                # Use Filename Format display
                 FilenameMenu.display_ff_full(ff_pref=value, item_num=i + 1)
+
+            elif key == "default_playlist_name_format":
+                # Use Playlist Name Format display
+                PlaylistNameMenu.display_pn_full(pn_pref=value, item_num=i + 1)
 
             else:
                 print(
@@ -233,3 +216,41 @@ default_filename_format:
         :param config_path: Direct path to the config file
         """
         print(f"\n{INFO} Created config file at {col(f"\'{config_path}\'", "cyan")}")
+
+    class Messages:
+        """
+        Messages for Config Editor
+        """
+
+        @staticmethod
+        def err_invalid_filename_formats() -> str:
+            """
+            String for invalid default filename formats in config
+            :return: error msg
+            """
+            return """Invalid default filename format.
+
+        Default filename format in config file should look like:
+        default_filename_format:
+          single:
+          - ''
+          - ''
+          - ''
+          playlist:
+          - ''
+          - ''
+          - ''"""
+
+        @staticmethod
+        def err_invalid_playlist_name_format() -> str:
+            """
+            String for invalid default playlist name format in config
+            :return: error msg
+            """
+            return """Invalid default playlist name format.
+
+        Default playlist name format in config file should look like:
+          default_playlist_name_format:
+          - ''
+          - ''
+          - ''"""

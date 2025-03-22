@@ -80,8 +80,8 @@ class ConfigHandler:
         with open(self._DEFAULT_CONFIG, "r") as f:
             self.default_vals: dict = self.yaml.load(f)
 
-        # If the file doesn't exist, create it and write defaults
-        if not os.path.exists(self.config_path):
+        # If the file doesn't exist or is empty, create it and write defaults
+        if not os.path.exists(self.config_path) or os.stat(self.config_path).st_size == 0:
             with open(self.config_path, "w") as f:
                 f.write("")
 
@@ -222,6 +222,11 @@ class ConfigValidator:
 
                 self.validate_fileformats(key=key)
 
+            elif key == "default_playlist_name_format":
+                # Validate playlist name format
+
+                self.validate_pnformat(key=key)
+
             if isinstance(value, str) and key in self.path_prefs:
                 # Validate path
 
@@ -254,6 +259,27 @@ class ConfigValidator:
         except AttributeError:
             err: ConfigError = ConfigError(err_code=2,
                                            msg=f"'{key}': {ConfigMenu.Messages.err_invalid_filename_formats()}")
+            self.config_errors.append(err)
+
+    def validate_pnformat(self, key: str):
+        """
+        Validate default playlist name format
+        """
+
+        try:
+            default_formats = self.ch.config_vals[key]
+
+            # Not a list
+            if not isinstance(default_formats, list):
+                raise AttributeError
+
+            # List is not list[str]
+            elif not all(isinstance(f, str) for f in default_formats):
+                raise AttributeError
+
+        except AttributeError:
+            err: ConfigError = ConfigError(err_code=2,
+                                           msg=f"'{key}': {ConfigMenu.Messages.err_invalid_playlist_name_format()}")
             self.config_errors.append(err)
 
     def validate_path(self, key: str, value: str):
@@ -417,7 +443,7 @@ class ConfigEditor:
         ConfigMenu.view_config(config=self.cur_prefs, config_path=self.ch.config_path)
 
     def edit_config(self):
-        from filenamecreator import FilenameCreator
+        from filenamecreator import FCEditMode
 
         while True:
             ConfigMenu.preference_menu(config=self.cur_prefs, changes=self.new_prefs)
@@ -434,9 +460,9 @@ class ConfigEditor:
                 pref_val = self.cur_prefs[pref_key]
                 def_val = list(self.ch.default_vals.values())[self.p_choice - 1]
 
-                # Use Filename Creator if editing default filename format
-                if pref_key == "default_filename_format":
-                    FilenameCreator(dwn_mode=-1)
+                # Use Filename Creator if editing default filename format or playlist name format
+                if pref_key in ["default_filename_format", "default_playlist_name_format"]:
+                    FCEditMode()
 
                     # Reload preferences
                     self.ch = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)

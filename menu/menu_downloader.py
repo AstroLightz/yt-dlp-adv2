@@ -73,15 +73,18 @@ class DwnMenu:
             print(f"\n{INFO} Enter the YouTube URL:")
 
         @staticmethod
-        def confirmation_screen(dwn_type: int, file_format: int, item_count: int, ff_mode: int,
-                                filename_format: list[str], video_quality: str or None) -> None:
+        def confirmation_screen(dwn_type: int, file_format: int, item_count: int,
+                                pn_format: list[str] or None, pn_mode: int or None,
+                                ff_mode: int, fn_format: list[str], video_quality: str or None) -> None:
             """
             Display a confirmation screen with all chosen options
             :param dwn_type: Download type
             :param file_format: File format
             :param item_count: Item count (Single Item/Playlist)
+            :param pn_mode: Type of Playlist name format
+            :param pn_format: Playlist name format
             :param ff_mode: Type of filename format
-            :param filename_format: Filename format list
+            :param fn_format: Filename format list
             :param video_quality: Video quality
             """
 
@@ -89,14 +92,24 @@ class DwnMenu:
             v_dwn_type: str = MenuUtilities.get_download_type(dwn_type=dwn_type)
             v_file_format: str = MenuUtilities.get_file_format(file_format=file_format, dwn_type=dwn_type)
             v_item_count: str = MenuUtilities.get_download_mode(item_count=item_count)
+
+            if pn_format[0]:
+                v_playlist_format: str = MenuUtilities.get_playlist_name_format(pn_mode=pn_mode, pn_format=pn_format)
+            else:
+                v_playlist_format = ""
+
             v_filename_format: str = MenuUtilities.get_filename_format(item_count=item_count, ff_mode=ff_mode,
-                                                                       filename_format=filename_format)
+                                                                       filename_format=fn_format)
 
             # Display confirmation screen
             print(f"\n{INFO} Chosen Options:"
                   f"\n - Download Type: {col(f"'{v_dwn_type}'", "cyan")}"
                   f"\n - File Format: {col(f"'{v_file_format}'", "cyan")}"
                   f"\n - Mode: {col(f"'{v_item_count}'", "cyan")}", end="")
+
+            # Hide Playlist name format for Single Item
+            print(f"\n - Playlist Name Format: {col(f"'{v_playlist_format}'", "cyan")}" \
+                      if pn_format[0] else "", end="")
 
             # Hide filename format for Artwork
             print(f"\n - Filename Format: {col(f"'{v_filename_format}'", "cyan")}" \

@@ -1,9 +1,10 @@
 ### ADD
-- Add filename formats for Playlist Directory names
 - Try to add support for Python 3.11
 
 ### FIX
 - Support playlists for video quality
+- Fix default_playlist_name_format overriding default_filename_format's comments
 
 ### CHANGE
 - Improve Download status for Artwork. Show a Download status for total download since individual status is not available
+

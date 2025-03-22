@@ -3,7 +3,7 @@ filenamecreator.py : The Filename Creator for creating custom filename formats
 """
 
 from confighandler import ConfigHandler
-from menu.menu_filenamecreator import FilenameMenu
+from menu.menu_filenamecreator import FilenameMenu, PlaylistNameMenu
 from menu.menu_input import Input
 from menu.menu_misc import MiscMenu
 from menu.menu_problems import FilenameProblem
@@ -35,64 +35,62 @@ class GetPartAt(dict):
         return value
 
 
-class FilenameCreator:
+class FCEditMode:
     """
-    Class for creating custom filename formats
+    Edit Mode for Filename Creator
     """
 
-    def __init__(self, dwn_mode: int = 0):
-        """
-        Initialize the Filename Creator
-        :param dwn_mode: Download mode (1 = Single Item, 2 = Playlist, 0 = Edit Mode)
-        """
-
-        self.launch_downloader: bool = False
-
-        self.filename_format = None
-        self.edit_mode: bool = False
-        self.dwn_mode = dwn_mode
-        self.msg: str = ""
-
+    def __init__(self, edit_default: int = 0):
+        self.launch_downloader = None
+        self.edit_default: int | str = edit_default
         self.ch: ConfigHandler = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
-        self.CONFIG: dict = self.ch.get_config()
+        self.CONFIG = self.ch.get_config()
 
-        if self.dwn_mode <= 0:
-            self.edit_mode = True
+        self.run()
 
+    def pull_config(self):
+        self.ch = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
+        self.CONFIG = self.ch.get_config()
+
+    def run(self):
         while True:
             self.pull_config()
 
-            if self.edit_mode:
-                # Get which download mode to use
-                FilenameMenu.Custom.fc_dwn_mode(dwn_mode=self.dwn_mode,
-                                                defaults=[self.CONFIG["default_filename_format"]["single"][0],
-                                                          self.CONFIG["default_filename_format"]["playlist"][0]])
-                MiscMenu.gap(1)
+            # Get which download mode to use
+            FilenameMenu.Custom.fc_def_format(edit_format=self.edit_default,
+                                              defaults=[self.CONFIG["default_filename_format"]["single"][0],
+                                                        self.CONFIG["default_filename_format"]["playlist"][0],
+                                                        self.CONFIG["default_playlist_name_format"][0]])
+            MiscMenu.gap(1)
 
-                # Don't allow launching the Downloader if coming from Config Editor
-                if self.dwn_mode == -1:
-                    self.dwn_mode: str = Input.String.get_input_custom(opt_range=[1, 2, 3, 'Q'], no_default=True)
+            # Don't allow launching the Downloader if coming from Config Editor
+            if self.edit_default == -1:
+                self.edit_default = Input.String.get_input_custom(opt_range=[1, 2, 3, 4, 'Q'], no_default=True)
 
-                else:
-                    self.dwn_mode: str = Input.String.get_input_custom(opt_range=[1, 2, 3, 'S', 'Q'], no_default=True)
+            else:
+                self.edit_default = Input.String.get_input_custom(opt_range=[1, 2, 3, 4, 'S', 'Q'],
+                                                                  no_default=True)
 
-            # Determine which parts are available
-            match str(self.dwn_mode):
+            match str(self.edit_default):
                 case '1':
                     # Single Item
 
-                    self.dwn_mode = 1
-                    self.parts: dict[str, list[str]] = FilenameUtilities.FORMAT_PARTS_S
-                    self.default_format: list[str] = self.CONFIG["default_filename_format"]["single"]
+                    self.edit_default = 1
+                    FilenameCreator(edit_default=self.edit_default, edit_mode=True)
 
                 case '2':
                     # Playlist
 
-                    self.dwn_mode = 2
-                    self.parts: dict[str, list[str]] = FilenameUtilities.FORMAT_PARTS_P
-                    self.default_format: list[str] = self.CONFIG["default_filename_format"]["playlist"]
+                    self.edit_default = 2
+                    FilenameCreator(edit_default=self.edit_default, edit_mode=True)
 
                 case '3':
+                    # Playlist Name
+
+                    self.edit_default = 3
+                    PlaylistNameCreator(edit_mode=True)
+
+                case '4':
                     # Clear Defaults
 
                     FilenameMenu.Custom.fc_clear_confirm()
@@ -100,10 +98,14 @@ class FilenameCreator:
 
                     if confirm:
                         # Clear defaults
-                        self.current_format = ["", "", ""]
+                        # Filename format
+                        for k in list(self.CONFIG["default_filename_format"].keys()):
+                            self.CONFIG["default_filename_format"][k].clear()
+                            self.CONFIG["default_filename_format"][k].extend(["", "", ""])
 
-                        self.CONFIG["default_filename_format"]["single"] = list(self.current_format)
-                        self.CONFIG["default_filename_format"]["playlist"] = list(self.current_format)
+                        # Playlist name format
+                        self.CONFIG["default_playlist_name_format"].clear()
+                        self.CONFIG["default_playlist_name_format"].extend(["", "", ""])
 
                         self.ch.change_prefs(new_prefs=self.CONFIG)
 
@@ -111,55 +113,102 @@ class FilenameCreator:
 
                         FilenameProblem.Success.fc_default_changed()
 
-                    continue
-
                 case 'S':
                     # Launch Downloader
                     self.launch_downloader = True
                     return
 
                 case 'Q':
-                    # Quit. Only used in Edit Mode
+                    # Quit
                     return
 
-            # List: [Display Format, f-string format, yt-dlp format]
-            self.current_format: list[str] = ["", "", ""]
 
-            # Inputs
-            self.custom_mode = None
-            self.part_choice = None
-            self.confirm = None
-            self.make_default = None
-            self.adv_format = None
+class FilenameCreator:
+    """
+    Class for creating custom filename formats
+    """
 
-            self.sel_part = None
-            self.added_parts: list[int] = []
+    def __init__(self, edit_default: int = 0, edit_mode: bool = False,
+                 parts: dict[str, list[str]] = None, default_format: list[str] = None, format_name: str = None):
+        """
+        Initialize the Filename Creator
+        :param edit_default: Which default format to edit: (1 = Single Item, 2 = Playlist, 0 = Other)
+        :param edit_mode: False if coming from Downloader
+        :param parts: List of available parts. Required if edit default is other
+        :param default_format: Default format. Required if edit default is other
+        :param format_name: Name of the default format. Required if edit default is other
+        """
 
-            # Header
-            FilenameMenu.Custom.fc_header(default_format=self.default_format[0], dwn_mode=self.dwn_mode)
-            MiscMenu.gap(2)
+        self.launch_downloader: bool = False
 
-            # Get mode
-            FilenameMenu.Custom.fc_mode()
-            MiscMenu.gap(1)
+        self.filename_format = None
+        self.edit_default = edit_default
+        self.edit_mode = edit_mode
+        self.format_name = format_name
+        self.msg: str = ""
 
-            self.custom_mode: int = Input.Integer.get_input_num(num_entries=2, default_option=1)
+        # List: [Display Format, f-string format, yt-dlp format]
+        self.current_format: list[str] = ["", "", ""]
 
-            match self.custom_mode:
-                case 1:
-                    # Simple
-                    self.menu_simple()
-                case 2:
+        # Inputs
+        self.custom_mode = None
+        self.part_choice = None
+        self.confirm = None
+        self.make_default = None
+        self.adv_format = None
 
-                    # Advanced
-                    self.menu_advanced()
+        self.sel_part = None
+        self.added_parts: list[int] = []
 
-            if not self.edit_mode:
-                break
+        self.parts = parts
+        self.default_format = default_format
 
-    def pull_config(self):
-        self.ch = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
-        self.CONFIG = self.ch.get_config()
+        self.ch: ConfigHandler = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
+        self.CONFIG: dict = self.ch.get_config()
+
+        self.run()
+
+    def run(self):
+        # Determine which parts are available
+        match self.edit_default:
+            case 1:
+                # Single Item
+
+                self.edit_default = 1
+                self.parts: dict[str, list[str]] = FilenameUtilities.FORMAT_PARTS_S
+                self.default_format: list[str] = self.CONFIG["default_filename_format"]["single"]
+
+            case 2:
+                # Playlist
+
+                self.edit_default = 2
+                self.parts: dict[str, list[str]] = FilenameUtilities.FORMAT_PARTS_P
+                self.default_format: list[str] = self.CONFIG["default_filename_format"]["playlist"]
+
+            case _:
+                # Other
+
+                self.edit_default = 0
+
+        # Header
+        FilenameMenu.Custom.fc_header(default_format=self.default_format[0], edit_format=self.edit_default,
+                                      edit_format_s=self.format_name)
+        MiscMenu.gap(2)
+
+        # Get mode
+        FilenameMenu.Custom.fc_mode()
+        MiscMenu.gap(1)
+
+        self.custom_mode: int = Input.Integer.get_input_num(num_entries=2, default_option=1)
+
+        match self.custom_mode:
+            case 1:
+                # Simple
+                self.menu_simple()
+            case 2:
+
+                # Advanced
+                self.menu_advanced()
 
     def menu_simple(self):
         while True:
@@ -277,11 +326,13 @@ class FilenameCreator:
 
     def set_default(self):
 
-        self.pull_config()
+        # Get config
+        self.ch: ConfigHandler = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
+        self.CONFIG = self.ch.get_config()
 
         if not self.edit_mode:
             FilenameMenu.Custom.fc_make_default(cur_format=self.current_format[0],
-                                                dwn_mode=self.dwn_mode,
+                                                dwn_mode=self.edit_default,
                                                 default_format=self.default_format[0])
 
             self.make_default: bool = Input.Boolean.get_input_bool(default_option=True)
@@ -294,11 +345,56 @@ class FilenameCreator:
             # Save as default
             self.default_format = self.current_format
 
-            if self.dwn_mode == 1:
-                self.CONFIG["default_filename_format"]["single"] = self.default_format
+            if self.edit_default == 1:
+                self.CONFIG["default_filename_format"]["single"].clear()
+                self.CONFIG["default_filename_format"]["single"].extend(self.default_format)
 
-            elif self.dwn_mode == 2:
-                self.CONFIG["default_filename_format"]["playlist"] = self.default_format
+            elif self.edit_default == 2:
+                self.CONFIG["default_filename_format"]["playlist"].clear()
+                self.CONFIG["default_filename_format"]["playlist"].extend(self.default_format)
+
+            FilenameProblem.Success.fc_default_changed()
+
+            self.ch.change_prefs(new_prefs=self.CONFIG)
+
+
+class PlaylistNameCreator(FilenameCreator):
+    def __init__(self, edit_mode: bool = False):
+        """
+        Initialize PlaylistNameCreator
+        :param edit_mode: False if coming from Downloader
+        """
+        self.ch: ConfigHandler = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
+        self.CONFIG = self.ch.get_config()
+        self.edit_mode = edit_mode
+
+        super().__init__(edit_mode=self.edit_mode, parts=FilenameUtilities.PLAYLIST_NAME_FORMAT_PARTS,
+                         default_format=self.CONFIG["default_playlist_name_format"],
+                         format_name="Playlist Name")
+
+    def set_default(self):
+        # Override FilenameCreator's set_default to work with just playlist name
+
+        # Get config
+        self.ch: ConfigHandler = ConfigHandler(file=ConfigUtilities.CONFIG_FILENAME)
+        self.CONFIG = self.ch.get_config()
+
+        if not self.edit_mode:
+            PlaylistNameMenu.Custom.pc_make_default(cur_format=self.current_format[0],
+                                                    default_format=self.default_format[0])
+
+            self.make_default: bool = Input.Boolean.get_input_bool(default_option=True)
+
+        else:
+            # Bypass if edit mode
+            self.make_default = True
+
+        if self.make_default:
+            # Save as default
+            self.default_format = self.current_format
+
+            self.CONFIG["default_playlist_name_format"].clear()
+            self.CONFIG["default_playlist_name_format"].extend(self.default_format)
 
             FilenameProblem.Success.fc_default_changed()
 

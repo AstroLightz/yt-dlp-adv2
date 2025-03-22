@@ -16,7 +16,8 @@ class ArgumentMenu:
               f"\n{col("-h, --help", "cyan")}: Show this help message."
               f"\n{col("-v, --version", "cyan")}: Show script version."
               f"\n{col("-c, --config", "cyan")}: Open the Config Editor."
-              f"\n{col("-f, --filename-creator", "cyan")}: Open the Filename Creator.")
+              f"\n{col("-f, --format-editor", "cyan")}: Open the Format Editor to edit "
+              f"Filename/Playlist Name formats.")
 
     @staticmethod
     def show_version(v: str) -> None:

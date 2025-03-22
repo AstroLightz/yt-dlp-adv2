@@ -9,15 +9,13 @@ from wand.image import Image
 
 from confighandler import ConfigHandler, ConfigValidator, ConfigError
 from downloader import Downloader
-from filenamecreator import FilenameCreator, GetPartAt
-
+from filenamecreator import FilenameCreator, PlaylistNameCreator, GetPartAt
 # Menus
 from menu.menu_downloader import DwnMenu
-from menu.menu_filenamecreator import FilenameMenu
+from menu.menu_filenamecreator import FilenameMenu, PlaylistNameMenu
 from menu.menu_input import Input
 from menu.menu_misc import MiscMenu, ArgumentMenu
 from menu.menu_problems import DwnProblem, MiscProblem, ConfigProblem
-
 # Utilities
 from utility.utils_downloader import DwnUtilities
 from utility.utils_filenamecreator import FilenameUtilities
@@ -40,10 +38,34 @@ class Backend:
         self.file_format = None
         self.item_count = None
 
+        # Playlist Name Format
+        self.pn_format = None
+        self.pn_mode = None
+        self.pn_preset = None
+        self.playlist_name: str = ""
+
+        # Required info needed to extract
+        self.pn_required_info: dict = {}
+
+        # Extracted info
+        self.pn_extracted_info: dict = {}
+
+        # Sanitized info
+        self.pn_sanitized_info: dict = {}
+
         # Filename Format
         self.filename_format = None
         self.ff_mode = None
         self.ff_preset = None
+
+        # Required info needed to extract
+        self.ff_required_info: dict = {}
+
+        # Extracted info
+        self.ff_extracted_info: dict = {}
+
+        # Sanitized info
+        self.ff_sanitized_info: dict = {}
 
         self.yt_url = None
         self.switch_mode = None
@@ -57,15 +79,6 @@ class Backend:
         self.dwn_size = None
         self.failed_downloads: list[str] = []
 
-        # Required info needed to extract
-        self.required_info: dict = {}
-
-        # Extracted info
-        self.extracted_info: dict = {}
-
-        # Sanitized info
-        self.sanitized_info: dict = {}
-
         # Directory Path for download
         self.download_dir = None
 
@@ -77,8 +90,6 @@ class Backend:
 
         self.titles: list[str] = []
         self.titles_safe: list[str] = []
-
-        self.playlist_name: str = ""
 
         self.ytdlp_options: dict = {}
 
@@ -159,9 +170,23 @@ class Backend:
         # Item Count
         self.menu_item_count()
 
-        # Filename Format.
-        default_format = self.CONFIG["default_filename_format"]["single" if self.item_count == 1 else "playlist"]
-        if self.bypass_defaults or not default_format[0]:
+        # Playlist Name Format
+        if self.item_count == 2:
+            pn_default_format = self.CONFIG["default_playlist_name_format"]
+            if self.bypass_defaults or not pn_default_format[0]:
+                self.menu_playlist_name_format()
+
+            else:
+                # Use default if present
+                self.pn_format: list[str] = list(pn_default_format)
+                PlaylistNameMenu.default_format(default_format=self.pn_format[0])
+
+        else:
+            self.pn_format = ["", "", ""]
+
+        # Filename Format
+        fn_default_format = self.CONFIG["default_filename_format"]["single" if self.item_count == 1 else "playlist"]
+        if self.bypass_defaults or not fn_default_format[0]:
 
             if self.dwn_type == 3:
                 # Default to (title).(ext) for artwork
@@ -180,7 +205,7 @@ class Backend:
         else:
             # Use default if present
 
-            self.filename_format: list[str] = list(default_format)
+            self.filename_format: list[str] = list(fn_default_format)
             FilenameMenu.default_format(default_format=self.filename_format[0])
 
         # URL
@@ -319,8 +344,40 @@ class Backend:
                 # Playlist
                 self.download_dir += "Playlists/"
 
-    ### Get filename format ###
+    ### Get playlist name format ###
+    def menu_playlist_name_format(self):
 
+        # Get type of playlist name format
+        PlaylistNameMenu.format_mode()
+        MiscMenu.gap(1)
+
+        self.pn_mode: int = Input.Integer.get_input_num(num_entries=2, default_option=1)
+
+        match self.pn_mode:
+            case 1:
+                # Use presets
+
+                PlaylistNameMenu.Presets.preset_menu(presets=list(FilenameUtilities.PLAYLIST_NAME_PRESETS.keys()))
+                MiscMenu.gap(1)
+
+                self.pn_preset: int = Input.Integer.get_input_num(
+                    num_entries=len(FilenameUtilities.PLAYLIST_NAME_PRESETS), default_option=1)
+
+                # Get format list from dict
+                self.pn_format: list[str] = (
+                    FilenameUtilities.PLAYLIST_NAME_PRESETS)[
+                    list(FilenameUtilities.PLAYLIST_NAME_PRESETS.keys())[self.pn_preset - 1]]
+
+                # Add playlist name format key to list
+                self.pn_format.insert(0,
+                                      list(FilenameUtilities.PLAYLIST_NAME_PRESETS.keys())[self.pn_preset - 1])
+
+            case 2:
+                # Custom
+
+                self.pn_format: list[str] = PlaylistNameCreator().filename_format
+
+    ### Get filename format ###
     def menu_filename_format(self):
 
         # Get type of filename format
@@ -371,7 +428,7 @@ class Backend:
             case 2:
                 # Custom
 
-                self.filename_format: list[str] = FilenameCreator(dwn_mode=self.item_count).filename_format
+                self.filename_format: list[str] = FilenameCreator(edit_default=self.item_count).filename_format
 
     ### Get URL ###
 
@@ -382,8 +439,9 @@ class Backend:
 
     def menu_confirmation(self):
         DwnMenu.Main.confirmation_screen(dwn_type=self.dwn_type, file_format=self.file_format,
-                                         item_count=self.item_count, ff_mode=self.ff_mode,
-                                         filename_format=self.filename_format, video_quality=self.video_quality)
+                                         item_count=self.item_count, pn_mode=self.pn_mode, pn_format=self.pn_format,
+                                         ff_mode=self.ff_mode, fn_format=self.filename_format,
+                                         video_quality=self.video_quality)
 
         choice: bool = Input.Boolean.get_input_bool(default_option=False)
 
@@ -541,7 +599,7 @@ class Backend:
             # Set download path
             # Map the filename format using the dictionary list values at i using the custom dictionary wrapper
             self.download_path = self.download_dir + self.filename_format[1].format_map(
-                GetPartAt(self.sanitized_info, index=i)) + f".{self.file_ext}"
+                GetPartAt(self.ff_sanitized_info, index=i)) + f".{self.file_ext}"
 
     def convert_images(self, titles: list[str]):
         """
@@ -594,18 +652,19 @@ class Backend:
         self.num_items: int = Downloader.get_title_count(self.yt_url)
 
         # Get the required info from the filename format
-        self.required_info: dict[str, list[str]] = DwnUtilities.get_required(filename_format=self.filename_format)
+        self.ff_required_info: dict[str, list[str]] = DwnUtilities.get_required(filename_format=self.filename_format)
 
         # Extract info from URL
-        self.extracted_info: dict[str, list[str]] = Downloader.extract_info(self.yt_url, required=self.required_info)
+        self.ff_extracted_info: dict[str, list[str]] = Downloader.extract_info(self.yt_url,
+                                                                               required=self.ff_required_info)
 
         # Convert all info to a safe version, replacing invalid characters with underscores
-        for key, value in self.extracted_info.items():
-            self.sanitized_info[key] = DwnUtilities.sanitize_list(unclean_list=value)
+        for key, value in self.ff_extracted_info.items():
+            self.ff_sanitized_info[key] = DwnUtilities.sanitize_list(unclean_list=value)
 
-        if "title" in list(self.extracted_info.keys()):
-            self.titles: list[str] = self.extracted_info["title"]
-            self.titles_safe: list[str] = self.sanitized_info["title"]
+        if "title" in list(self.ff_extracted_info.keys()):
+            self.titles: list[str] = self.ff_extracted_info["title"]
+            self.titles_safe: list[str] = self.ff_sanitized_info["title"]
 
         if not self.titles:
             # Fallback to video ID if no titles
@@ -615,7 +674,7 @@ class Backend:
 
         # If a playlist, get the playlist name
         if self.item_count == 2:
-            self.playlist_name: str = Downloader.get_playlist_name(self.yt_url)
+            self.playlist_name: str = DwnUtilities.get_playlist_name(url=self.yt_url, pn_format=self.pn_format)
 
         # Perform checks
         if not self.download_checks():
@@ -639,7 +698,7 @@ class Backend:
                                                        ff_mode=self.ff_preset,
                                                        filename_format=self.filename_format,
                                                        titles=self.titles,
-                                                       extracted_info=self.extracted_info,
+                                                       extracted_info=self.ff_extracted_info,
                                                        progress_callback=Backend.download_callback)
 
         except Exception as e:

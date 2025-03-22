@@ -184,6 +184,24 @@ class MenuUtilities:
         return "Single Item" if item_count == 1 else "Playlist"
 
     @staticmethod
+    def get_playlist_name_format(pn_mode: int, pn_format: list[str]) -> str:
+        """
+        Get the playlist name format
+        :param pn_mode: Playlist name mode (Preset vs Custom)
+        :param pn_format: Playlist name format list
+        :return: Playlist name format key
+        """
+
+        if pn_mode == 1:
+            # Preset
+            return list(FilenameUtilities.PLAYLIST_NAME_PRESETS.keys())[
+                list(FilenameUtilities.PLAYLIST_NAME_PRESETS.values()).index(pn_format)]
+
+        else:
+            # Custom: Use first item in list
+            return pn_format[0]
+
+    @staticmethod
     def get_filename_format(item_count: int, ff_mode: int, filename_format: list[str]) -> str:
         """
         Get the filename format

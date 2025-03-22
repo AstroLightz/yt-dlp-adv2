@@ -19,7 +19,7 @@ import sys
 
 from backend import Backend
 from confighandler import ConfigEditor
-from filenamecreator import FilenameCreator
+from filenamecreator import FCEditMode
 from menu.menu_misc import MiscMenu, ArgumentMenu
 from menu.menu_problems import MiscProblem
 from utility.utils_misc import MiscUtilities
@@ -37,7 +37,7 @@ def handle_args() -> int:
     global _BYPASS_DEFAULTS
 
     options: str = "hvcfB"
-    long_options: list[str] = ["help", "version", "config", "filename-creator", "bypass-defaults"]
+    long_options: list[str] = ["help", "version", "config", "format-editor", "bypass-defaults"]
 
     # Get command line arguments
     cmd_args: list = sys.argv[1:]
@@ -67,9 +67,9 @@ def handle_args() -> int:
 
                 return 1
 
-            elif arg in ("-f", "--filename-creator") and num_args == 1:
-                # Open the Filename Creator
-                if FilenameCreator().launch_downloader:
+            elif arg in ("-f", "--format-editor") and num_args == 1:
+                # Open the Format Editor
+                if FCEditMode().launch_downloader:
                     Backend()
 
                 return 1

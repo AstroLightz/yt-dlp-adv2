@@ -3,7 +3,7 @@ class MiscUtilities:
     Miscellaneous Utilities
     """
 
-    VERSION: str = "1.9.0"
+    VERSION: str = "1.10.0"
     COMMITS_LINK: str = "https://github.com/AstroLightz/yt-dlp-adv2/commits/master/"
 
     UNITS: list[str] = ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]

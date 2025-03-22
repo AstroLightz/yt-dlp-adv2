@@ -16,6 +16,21 @@ artwork_directory: ~/Pictures/YouTube Downloads
 # Default video quality for Video downloads ['']
 default_video_quality: ''
 
+# Default playlist name format
+# Values: [ Display format, f-string format, yt-dlp format ]
+
+# e.g.
+# ['(title) - (uploader)', '{title} - {uploader}', '%(title)s - %(uploader)s']
+
+# Defaults:
+# - ''
+# - ''
+# - ''
+default_playlist_name_format:
+  - ''
+  - ''
+  - ''
+
 # Default filename format
 # Values: [ Display format, f-string format, yt-dlp format ]
 
@@ -34,10 +49,10 @@ default_video_quality: ''
 # - ''
 default_filename_format:
   single:
-  - ''
-  - ''
-  - ''
+    - ''
+    - ''
+    - ''
   playlist:
-  - ''
-  - ''
-  - ''
+    - ''
+    - ''
+    - ''
