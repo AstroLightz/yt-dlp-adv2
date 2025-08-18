@@ -4,6 +4,9 @@
 
 <br><br>
 
+> [!WARNING]
+> <b>All future development will be moved to the <a href="https://codeberg.org/AstroLightz/yt-dlp-adv">Codeberg Mirror</a> going forward!!!</b>
+
 yt-dlp-adv is a remake of the original yt-dlp-adv, written in Python.
 A clean CLI script to download videos, audio, and thumbnails from YouTube.
 
